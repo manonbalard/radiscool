@@ -10,10 +10,22 @@
   <body>
     {% extends "layout.html" %}
     {% block content %}
-   <div class="Recettes">
-     <h1>Cette page sera la page des recettes</h1>
-     <p>To do</p>
-   </div>
+    <table border="1px">
+      <thead>
+          <td><strong>Titre</strong></td>
+          <td><strong>Ingrédients</strong></td>
+          <td><strong>Etapes</strong></td>
+      </thead>
+
+      {% for row in rows %}
+
+      <tr>
+          <td>{{ row["titre"] }}</td>
+          <td> {{ row["ingrédients"]}}</td>
+          <td>{{ row["étapes"] }}</td>
+      </tr>
+      {% endfor %}
+    </table>
    {% endblock %}
   </body>
 </html>
