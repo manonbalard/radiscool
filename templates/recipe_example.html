@@ -1,26 +1,62 @@
-<!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Radiscool</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-  </head>
   <body>
     {% extends "layout.html" %}
     {% block content %}
     <form action="{{ url_for('addrecipe') }}" method="POST">
+        <br>
         <h3>Créez votre recette ci-dessous:</h3>
-        <label for="titre">Titre de la recette:</label><br>
-        <input type="text" name="titre"><br>
-        <label for="ingrédients">Ingrédients:</label><br>
-        <input type="text" name="ingrédients"><br>
+        <br>
+        <br>
+
+        <div class="container">
+          <div class="row">
+            <div class="col">
+              <label for="titre" class="form-label">Titre de la recette:</label><br>
+            </div>
+            <div class="col">
+            <input type="text" aria-label="titre" class="form-control" name="titre"><br>
+          </div>
+          </div>
+          <div class="row">
+            <div class="col">
+              <label for="typedeplat" class="form-label">Type de plat:</label><br>
+            </div>
+            <div class="col">
+              <div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="True" aria-expanded="false">Choisissez le type de plat</button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                  <a class="dropdown-item" href="#">Entrée</a>
+                  <a class="dropdown-item" href="#">Plat</a>
+                  <a class="dropdown-item" href="#">Dessert</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <br>
+          <h1>Ingrédients de la recette:</h1><br>
+          <br>
+          <div class="row">
+            <div class="col">
+              <input type="text" class="form-control" name="quantité" placeholder="Quantité">
+            </div>
+            <div class="col">
+              <input type="text" class="form-control" name="unité" placeholder="Unité">
+            </div>
+            <div class="col">
+              <input type="text" class="form-control" name="ingrédient" placeholder="Ingrédient">
+            </div>
+            <div class="col">
+              <button type="submit" formaction="{{ url_for('addingredient') }}" class="btn btn-secondary">Ajouter ingrédient</button> 
+            </div>
+            </div>
+          </div>
+
         <label for="étapes">Etapes:</label><br>
         <input type="text" name="étapes"><br>
         <input type="submit" value="Submit" /><br>
+        </div>
     </form>
-
+    
     {% endblock %}
   </body>
 </html>
