@@ -61,20 +61,26 @@ def home():
     return render_template('home.html')
 
 @app.route("/enternewrecipe")
-def enternewrecipe():
-    return render_template('recipe_example.html')
+@app.route("/enternewrecipe/<int:recette_id>")
+def enternewrecipe(recette_id=None):
+    if recette_id: 
+        return render_template('recipe_example.html', recette_id=recette_id)
+    else: 
+        flash("Please create a recipe first.", "error")
+        return redirect(url_for('addrecipe'))
 
 @app.route("/addrecipe", methods = ['POST', 'GET'])
 def addrecipe():
     if request.method == 'POST':
             titre = request.form['titre']
-            étapes = request.form['étapes']
-
-            my_data = Recettes(titre, étapes)
-            database.session.add(my_data)
+            new_recipe = Recettes(titre=titre)
+            database.session.add(new_recipe)
             database.session.commit()
 
-            return redirect(url_for('recipes'))
+            flash("Recipe added successfully", "success")
+            return redirect (url_for('enternewrecipe', recette_id=new_recipe.id))
+    else: 
+            return render_template('recipe_example.html')
 
 @app.route("/addingredient", methods = ['POST', 'GET'],)
 def addingredient():
@@ -95,10 +101,11 @@ def viewingredients():
      data_ingredients_list = [ingredient.to_dict() for ingredient in data_ingredients]
      return jsonify(data_ingredients_list)
 
-@app.route("/addstep", methods = ['POST', 'GET'], )
+@app.route("/addstep", methods = ['POST'], )
 def addstep():
-    recette_id = request.form.get('recette_id', type=int)
-    step_text = request.form.get('step_text')
+    if request.method == 'POST':
+        recette_id = request.form['recette_id']
+        step_text = request.form['step_text']
     if step_text:
         last_step = Steps.query.filter_by(recette_id=recette_id).order_by(Steps.step_order.desc()).first()
         new_step_order = last_step.step_order + 1 if last_step else 1
@@ -106,10 +113,9 @@ def addstep():
         new_step = Steps(recette_id=recette_id, step_text=step_text, step_order=new_step_order)
         database.session.add(new_step)
         database.session.commit()
-        flash('Step added successfully!', 'success')
+        return jsonify(success= True, message='Step added successfully!')
     else:
-        flash('Step text is required.', 'error')
-    return redirect(url_for('enternewrecipe'))
+        return jsonify(success=False, message='Step text is required.')
     
 @app.route("/viewsteps")
 def viewsteps():

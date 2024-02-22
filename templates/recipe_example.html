@@ -94,37 +94,44 @@
     </div>
     <div id="section-view-steps">
       <script>
-      $(document).ready(function() {
-        function fetchAndDisplaySteps() {
-          $.getJSON('/viewsteps', function(data_steps_list) {
-            $('#stepsList').empty();
-            $.each(data_steps_list, function(index, step) {
+        $(document).ready(function() {
+          function fetchAndDisplaySteps() {
+            $.getJSON('/viewsteps', function(data_steps_list) {
+              $('#stepsList').empty();
+              $.each(data_steps_list, function(index, step) {
                 $('#stepsList').append(`<li id="step-${step.id}" class="ui-state-default">
                                             <span class="step-text">${step.step_text}</span>
                                             <button onclick="editStep(${step.id})">Edit</button>
                                         </li>`);
-                              });
-        });
-    }
-
-    fetchAndDisplaySteps();
-          let stepCount = 0;
-    
-          $('#addStep').click(function() {
-            const stepText = $('#stepInput').val();
+              });
+            });
+          }
+      
+          fetchAndDisplaySteps();
+      
+          $('#addStep').click(function(event) {
+            event.preventDefault();
+            var stepText = $('#stepInput').val();
+            var recetteId = $('input[name="recette_id"]').val();
+      
             if (stepText) {
-              stepCount++;
-              $('#stepsList').append(`<li id="step-${stepCount}" class="ui-state-default">
-                                        <span class="step-text">${stepText}</span>
-                                        <button onclick="editStep(${stepCount})">Edit</button>
-                                      </li>`);
-              $('#stepInput').val('');
+              $.post('/addstep', {
+                recette_id: recetteId,
+                step_text: stepText
+              }, function(response) {
+                if(response.success) {
+                  fetchAndDisplaySteps(); 
+                } else {
+                  alert(response.message); 
+                }
+              });
             }
           });
-    
+      
           $('#stepsList').sortable();
-            });
+        });
       </script>
+      
 
     <input type="submit" value="Submit" /><br>
   </form>
