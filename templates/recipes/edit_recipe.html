@@ -1,0 +1,87 @@
+<html>
+<body>
+  {% extends "layout.html" %}
+  {% block content %}
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <form class="row g-3" action="{{ url_for('recipes.addrecipe') }}" method="POST">
+     <div class="container">
+        <h2>Edit Recipe: {{ recipe.title }}</h2>
+        <form action="{{ url_for('recipes.edit_recipe', id=recipe.id) }}" method="post">
+            <input type="hidden" name="recipe_id" value="{{ recipe.id }}">
+            <div class="mb-3">
+                <label for="title" class="form-label">Title</label>
+                <input type="text" class="form-control" id="title" name="title" value="{{ recipe.title }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description" rows="3" required>{{ recipe.description }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Update Recipe</button>
+        </form>
+    
+        <hr>
+    
+        <h3>Ingredients</h3>
+            <ul id="ingredients-list">
+                {% for ingredient in recipe.ingredients %}
+                <li>{{ ingredient.quantity }} {{ ingredient.unit }} of {{ ingredient.name_ingredient }}</li>
+                {% else %}
+                <li>No ingredients found.</li>
+                {% endfor %}
+            </ul>
+
+        <form id="add-ingredient-form">
+            <input type="hidden" name="recipe_id" value="{{ recipe.id }}">
+            <div class="row">
+                <div class="col">
+                    <input type="text" class="form-control" name="quantity" placeholder="Quantity">
+                </div>
+                <div class="col">
+                    <input type="text" class="form-control" name="unit" placeholder="Unit">
+                </div>
+                <div class="col">
+                    <input type="text" class="form-control" name="name_ingredient" placeholder="Ingredient Name">
+                </div>
+                <div class="col">
+                    <button type="submit" class="btn btn-secondary">Add Ingredient</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <script>
+        $(document).ready(function() {
+            // JavaScript to handle adding an ingredient via AJAX
+            $('#add-ingredient-form').submit(function(e) {
+                e.preventDefault();
+                var formData = $(this).serialize();
+                $.ajax({
+                    type: "POST",
+                    url: "{{ url_for('recipes.addrecipe_with_ingredients') }}",
+                    data: formData,
+                    success: function(response) {
+                        // Reload ingredients list or add to DOM directly
+                        console.log(response); // For debugging
+                        // Clear the form fields
+                        $('input[name="quantity"]').val('');
+                        $('input[name="unit"]').val('');
+                        $('input[name="name_ingredient"]').val('');
+                    }
+                });
+            });
+    
+            // Function to load and display ingredients
+            function loadIngredients() {
+                // Implement AJAX call to load ingredients for this recipe
+                // and update the DOM in the 'ingredients-list' div
+            }
+    
+            // Initial load of ingredients
+            loadIngredients();
+        });
+    </script>
+    {% endblock %}
+    

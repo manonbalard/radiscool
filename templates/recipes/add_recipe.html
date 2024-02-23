@@ -1,0 +1,88 @@
+<html>
+<body>
+  {% extends "layout.html" %}
+  {% block content %}
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <div class="container">
+    <h2>Créez votre recette ci-dessous:</h2>
+    <form id="recipe-form">
+        <div class="mb-3">
+            <label for="title" class="form-label">Titre de la recette:</label>
+            <input type="text" class="form-control" id="title" name="title" placeholder="Entrez le titre de la recette" required>
+        </div>
+        <h3>Ingrédients:</h3>
+        <ul id="ingredients-list" class="list-group mb-3"></ul>
+        <div class="row mb-3">
+            <div class="col">
+                <input type="text" class="form-control" id="quantity" placeholder="Quantité">
+            </div>
+            <div class="col">
+                <input type="text" class="form-control" id="unit" placeholder="Unité">
+            </div>
+            <div class="col">
+                <input type="text" class="form-control" id="name_ingredient" placeholder="Nom de l'ingrédient">
+            </div>
+            <div class="col">
+                <button type="button" class="btn btn-secondary" id="add-ingredient-button">Ajouter un ingrédient</button>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label for="description" class="form-label">Description de la recette:</label>
+            <textarea class="form-control" id="description" name="description" rows="3" placeholder="Décrivez les étapes de la recette" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Soumettre la recette</button>
+    </form>
+</div>
+
+<script>
+    let ingredients = [];
+
+    $(document).ready(function() {
+        $('#add-ingredient-button').click(function() {
+            const quantity = $('#quantity').val();
+            const unit = $('#unit').val();
+            const name = $('#name_ingredient').val();
+
+            ingredients.push({quantity, unit, name});
+
+            $('#quantity').val('');
+            $('#unit').val('');
+            $('#name_ingredient').val('');
+
+            displayIngredients();
+        });
+
+        $('#recipe-form').submit(function(e) {
+            e.preventDefault();
+            const title = $('#title').val();
+            const description = $('#description').val();
+
+            $.ajax({
+                url: "{{ url_for('recipes.addrecipe_with_ingredients') }}",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({title, description, ingredients}),
+                success: function(response) {
+                    console.log(response);
+                },
+                error: function(xhr, status, error) {
+                    console.error(error);
+                }
+            });
+        });
+    });
+
+    function displayIngredients() {
+        const list = $('#ingredients-list');
+        list.empty();
+        ingredients.forEach((ingredient, index) => {
+            list.append(`<div>${ingredient.quantity} ${ingredient.unit} ${ingredient.name}</div>`);
+        });
+    }
+</script>
+{% endblock %}
+</body>
+</html>

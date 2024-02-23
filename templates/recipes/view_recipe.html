@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+    <h1>{{ recipe.title }}</h1>
+    <h2>Ingrédients</h2>
+    <ul>
+        {% for ingredient in ingredients %}
+        <li>{{ ingredient.quantity }} {{ ingredient.unit }} of {{ ingredient.name_ingredient }}</li>
+        {% else %}
+        <li>No ingredients found.</li>
+        {% endfor %}
+    </ul>
+    <p>{{ recipe.description }}</p>
+    
+
+
+    <a href="{{ url_for('recipes.index') }}" class="btn btn-primary">Back to Recipes</a>
+    <a href="{{ url_for('recipes.edit_recipe', id=recipe.id) }}" class="btn btn-secondary">Edit Recipe</a>
+</div>
+{% endblock %}

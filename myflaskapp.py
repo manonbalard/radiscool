@@ -1,134 +1,25 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, render_template
+from database import db
+from config import Config
 
-app = Flask(__name__)
-app.secret_key = "Secret Key"
+def create_app(config_class=Config):
+    app = Flask(__name__)
+    app.config.from_object(config_class)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:''@localhost/radiscool'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    db.init_app(app)
 
-database = SQLAlchemy(app)
+    from recipes.routes import recipes as recipes_blueprint
+    app.register_blueprint(recipes_blueprint, url_prefix='/recipes')
 
-class Recettes(database.Model):
-    id = database.Column(database.Integer, primary_key = True)
-    titre = database.Column(database.String(100), nullable = False)
-    étapes = database.Column(database.String(100), nullable = False)
+    return app
 
-    def __init__(self, id, titre, étapes):
-        self.id = id
-        self.titre = titre
-        self.étapes = étapes
+app = create_app(Config) 
 
-class Ingrédients(database.Model):
-    id = database.Column(database.Integer, primary_key = True)
-    quantité = database.Column(database.String(100), nullable = False)
-    unité = database.Column(database.String(100), nullable = False)
-    ingrédient = database.Column(database.String(100), nullable = False)
-
-    def __init__(self, quantité, unité, ingrédient):
-        self.quantité = quantité
-        self.unité = unité
-        self.ingrédient = ingrédient
-    
-    def to_dict(self):
-         return {
-              'id': self.id,
-              'quantité': self.quantité,
-              'unité': self.unité,
-              'ingrédient': self.ingrédient
-         }
-
-class Steps(database.Model):
-    id = database.Column(database.Integer, primary_key = True)
-    recette_id = database.Column(database.Integer, database.ForeignKey('recettes.id'), nullable=False)
-    step_text = database.Column(database.String(100), nullable = False)
-    step_order = database.Column(database.Integer, nullable = False)
-
-    def __init__(self, recette_id, step_text, step_order):
-        self.recette_id = recette_id
-        self.step_text = step_text
-        self.step_order = step_order
-    
-    def to_dict(self):
-         return {
-              'id': self.id,
-              'step_text': self.step_text,
-              'step_order': self.step_order
-         }
-
-@app.route("/")
+@app.route('/')
 def home():
     return render_template('home.html')
 
-@app.route("/enternewrecipe")
-@app.route("/enternewrecipe/<int:recette_id>")
-def enternewrecipe(recette_id=None):
-    if recette_id: 
-        return render_template('recipe_example.html', recette_id=recette_id)
-    else: 
-        flash("Please create a recipe first.", "error")
-        return redirect(url_for('addrecipe'))
-
-@app.route("/addrecipe", methods = ['POST', 'GET'])
-def addrecipe():
-    if request.method == 'POST':
-            titre = request.form['titre']
-            new_recipe = Recettes(titre=titre)
-            database.session.add(new_recipe)
-            database.session.commit()
-
-            flash("Recipe added successfully", "success")
-            return redirect (url_for('enternewrecipe', recette_id=new_recipe.id))
-    else: 
-            return render_template('recipe_example.html')
-
-@app.route("/addingredient", methods = ['POST', 'GET'],)
-def addingredient():
-    if request.method == 'POST':
-            quantité = request.form['quantité']
-            unité = request.form['unité']
-            ingrédient = request.form['ingrédient']
-
-            my_list_of_ingredients= Ingrédients(quantité, unité, ingrédient)
-            database.session.add(my_list_of_ingredients)
-            database.session.commit()
-
-            return redirect(url_for('enternewrecipe'))
-    
-@app.route("/viewingredients")
-def viewingredients():
-     data_ingredients = Ingrédients.query.all()
-     data_ingredients_list = [ingredient.to_dict() for ingredient in data_ingredients]
-     return jsonify(data_ingredients_list)
-
-@app.route("/addstep", methods = ['POST'], )
-def addstep():
-    if request.method == 'POST':
-        recette_id = request.form['recette_id']
-        step_text = request.form['step_text']
-    if step_text:
-        last_step = Steps.query.filter_by(recette_id=recette_id).order_by(Steps.step_order.desc()).first()
-        new_step_order = last_step.step_order + 1 if last_step else 1
-        
-        new_step = Steps(recette_id=recette_id, step_text=step_text, step_order=new_step_order)
-        database.session.add(new_step)
-        database.session.commit()
-        return jsonify(success= True, message='Step added successfully!')
-    else:
-        return jsonify(success=False, message='Step text is required.')
-    
-@app.route("/viewsteps")
-def viewsteps():
-     data_steps = Steps.query.all()
-     data_steps_list = [step.to_dict() for step in data_steps]
-     return jsonify(data_steps_list)
-
-@app.route("/recipes")
-def recipes():
-    all_data = Recettes.query.all()
-    return render_template('recipes.html', recipes = all_data)
-
-@app.route("/login")
+@app.route('/login')
 def login():
     return render_template('login.html')
 

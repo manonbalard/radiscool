@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+    <h1>Recipes</h1>
+    <a href="{{ url_for('recipes.addrecipe') }}" class="btn btn-primary mb-3">Add New Recipe</a>
+    <div class="list-group">
+        {% for recipe in recipes %}
+        <div class="list-group-item list-group-item-action flex-column align-items-start">
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">{{ recipe.title }}</h5>
+                <div>
+                    <button onclick="location.href='{{ url_for('recipes.view_recipe', id=recipe.id) }}'" class="btn-as-link">View</button> |
+                    <button onclick="location.href='{{ url_for('recipes.edit_recipe', id=recipe.id) }}'" class="btn-as-link">Edit</button> |
+                    <form action="{{ url_for('recipes.delete_recipe', id=recipe.id) }}" method="post" class="d-inline">
+                        <button type="submit" class="btn-as-link" onclick="return confirm('Are you sure?');">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <p>No recipes found.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
