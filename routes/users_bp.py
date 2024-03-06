@@ -6,12 +6,12 @@ users = Blueprint('users', __name__)
 
 @users.route('/login')
 def login():
-    return render_template('login.html')
+    return render_template('users/login.html')
 
 @users.route('/signup')
-def login():
-    return render_template('signup.html')
+def signup():
+    return render_template('users/signup.html')
 
 @users.route('/profile')
-def login():
-    return render_template('profile.html')
+def profile():
+    return render_template('users/profile.html')
