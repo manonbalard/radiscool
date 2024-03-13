@@ -54,7 +54,6 @@
     
     <script>
         $(document).ready(function() {
-            // JavaScript to handle adding an ingredient via AJAX
             $('#add-ingredient-form').submit(function(e) {
                 e.preventDefault();
                 var formData = $(this).serialize();
@@ -63,9 +62,7 @@
                     url: "{{ url_for('recipes.addrecipe_with_ingredients') }}",
                     data: formData,
                     success: function(response) {
-                        // Reload ingredients list or add to DOM directly
-                        console.log(response); // For debugging
-                        // Clear the form fields
+                        console.log(response); 
                         $('input[name="quantity"]').val('');
                         $('input[name="unit"]').val('');
                         $('input[name="name_ingredient"]').val('');
@@ -73,13 +70,9 @@
                 });
             });
     
-            // Function to load and display ingredients
             function loadIngredients() {
-                // Implement AJAX call to load ingredients for this recipe
-                // and update the DOM in the 'ingredients-list' div
             }
     
-            // Initial load of ingredients
             loadIngredients();
         });
     </script>

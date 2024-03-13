@@ -4,12 +4,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Radiscool</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-dVk6VtpA5lP5Nz3Oc1L4iWAO5rc5LUbN5pw5SmROz9x5HN0T3e7Fjg5J9f3m8Jxj" crossorigin="anonymous"></script>
-  </head> 
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    </head> 
   <body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <header class="mb-5">
       <nav class="navbar navbar-expand-lg">
         <div class="container-fluid" >
@@ -27,9 +25,15 @@
               </li>
               <li class="nav-item">
                 <a class="nav-link active" aria-current="page" href="{{ url_for('recipes.index') }}">Voir les recettes</a>
-              </li>                
-              <li class="nav-item">
-                <a class="nav-link active" aria-current="page" href="{{ url_for('users.login') }}">Se Connecter</a>
+              </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                  Espace membres
+                </a>
+                <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                  <a class="dropdown-item" href="{{ url_for('users.login') }}">Se connecter</a>
+                  <a class="dropdown-item" href="{{ url_for('users.signup') }}">S'inscrire</a>
+                </div>
               </li>
             </ul>
             <form class="d-flex" role="search">
@@ -38,7 +42,7 @@
             </form>
           </div>
         </div>
-      </nav>
+      </nav> 
     </header>
     <div class="container">
       {% block content %}
