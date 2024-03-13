@@ -31,8 +31,14 @@
                   Espace membres
                 </a>
                 <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                  {% if not current_user.is_authenticated %}
                   <a class="dropdown-item" href="{{ url_for('users.login') }}">Se connecter</a>
                   <a class="dropdown-item" href="{{ url_for('users.signup') }}">S'inscrire</a>
+                  {% endif %}
+                  {% if current_user.is_authenticated %}
+                  <a class="dropdown-item" href="{{ url_for('users.profile') }}">Profil</a>
+                  <a class="dropdown-item" href="{{ url_for('users.logout') }}">Se déconnecter</a>
+                  {% endif %}
                 </div>
               </li>
             </ul>
