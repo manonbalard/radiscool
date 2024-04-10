@@ -19,8 +19,6 @@ def create_app(config_class=Config):
     def load_user(user_id):
         return User.query.get(int(user_id))
 
-
-
     from routes.recipes_bp import recipes as recipes_blueprint
     app.register_blueprint(recipes_blueprint, url_prefix='/recipes')
 

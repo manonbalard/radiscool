@@ -4,77 +4,146 @@
   {% block content %}
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-  <form class="row g-3" action="{{ url_for('recipes.addrecipe') }}" method="POST">
-     <div class="container">
-        <h2>Modifier la recette: {{ recipe.title }}</h2>
-        <form action="{{ url_for('recipes.edit_recipe', id=recipe.id) }}" method="post">
-            <input type="hidden" name="recipe_id" value="{{ recipe.id }}">
-            <div class="mb-3">
-                <label for="title" class="form-label">Titre</label>
-                <input type="text" class="form-control" id="title" name="title" value="{{ recipe.title }}" required>
+  <div class="container">
+    <h2>Modifier la recette: {{ recipe.title }}</h2>
+    <!-- Main recipe form for updating the recipe's title and description -->
+    <form action="{{ url_for('recipes.edit_recipe', id=recipe.id) }}" method="post">
+        <input type="hidden" name="recipe_id" value="{{ recipe.id }}">
+        <div class="mb-3">
+            <label for="title" class="form-label">Titre</label>
+            <input type="text" class="form-control" id="title" name="title" value="{{ recipe.title }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea class="form-control" id="description" name="description" rows="3" required>{{ recipe.description }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Modifier la recette</button>
+    </form>
+    
+    <h3>Ingrédients</h3>
+    <ul id="ingredients-list">
+        <!-- Display each ingredient with an edit form -->
+        {% for ingredient in recipe.ingredients %}
+        <li data-ingredient-id="{{ ingredient.id }}">
+            <div class="ingredient-details">
+                <span class="ingredient-quantity">{{ ingredient.quantity }}</span>
+                <span class="ingredient-unit">{{ ingredient.unit }}</span>
+                <span class="ingredient-name">{{ ingredient.name_ingredient }}</span>
+                <button type="button" class="btn btn-info edit-btn">Modifier</button>
             </div>
+            <form class="ingredient-edit-form hidden" data-ingredient-id="{{ ingredient.id }}"> <!-- Form fields are hidden by default -->
+                <input type="text" name="quantity" placeholder="Quantité" value="{{ ingredient.quantity }}">
+                <input type="text" name="unit" placeholder="Unité" value="{{ ingredient.unit }}">
+                <input type="text" name="name_ingredient" placeholder="Nom" value="{{ ingredient.name_ingredient }}">
+            </form>
+        </li>
+        {% else %}
+        <li>Pas d'ingrédient trouvé</li>
+        {% endfor %}
+    </ul>   
+    
 
-        </form>
-        
-        <h3>Ingrédients</h3>
-            <ul id="ingredients-list">
-                {% for ingredient in recipe.ingredients %}
-                <li>{{ ingredient.quantity }} {{ ingredient.unit }} of {{ ingredient.name_ingredient }}</li>
-                {% else %}
-                <li>Pas d'ingrédient trouvé</li>
-                {% endfor %}
-            </ul>
-
-        <form id="add-ingredient-form">
-            <input type="hidden" name="recipe_id" value="{{ recipe.id }}">
-            <div class="row">
-                <div class="col">
-                    <input type="text" class="form-control" name="quantity" placeholder="Quantité">
-                </div>
-                <div class="col">
-                    <input type="text" class="form-control" name="unit" placeholder="Unité">
-                </div>
-                <div class="col">
-                    <input type="text" class="form-control" name="name_ingredient" placeholder="Nom de l'ingrédient">
-                </div>
-                <div class="col">
-                    <button type="submit" class="btn btn-secondary">Ajouter l'ingrédient</button>
-                </div>
-            </div>
-            <div class="mb-3">
-                <label for="description" class="form-label">Description</label>
-                <textarea class="form-control" id="description" name="description" rows="3" required>{{ recipe.description }}</textarea>
-            </div>
-            <button type="submit" class="btn btn-primary">Modifier la recette</button>
-        </form>
+    <!-- Ingredient Edit Modal -->
+    <div class="modal fade" id="ingredientEditModal" tabindex="-1" role="dialog" aria-labelledby="ingredientEditModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="ingredientEditModalLabel">Edit Ingredient</h5>
+          </div>
+          <div class="modal-body">
+            <!-- Ingredient edit form will be dynamically inserted here -->
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" id="saveIngredientChanges">Save changes</button>
+          </div>
+        </div>
+      </div>
     </div>
+    
+    <!-- Separate form for adding new ingredients -->
+    <form id="add-ingredient-form">
+        <input type="hidden" name="recipe_id" value="{{ recipe.id }}">
+        <div class="row">
+            <div class="col">
+                <input type="text" class="form-control" name="quantity" placeholder="Quantité">
+            </div>
+            <div class="col">
+                <input type="text" class="form-control" name="unit" placeholder="Unité">
+            </div>
+            <div class="col">
+                <input type="text" class="form-control" name="name_ingredient" placeholder="Nom de l'ingrédient">
+            </div>
+            <div class="col">
+                <button type="submit" class="btn btn-secondary">Ajouter l'ingrédient</button>
+            </div>
+        </div>
+    </form>
+  </div>
 
-    
-    <script>
-        $(document).ready(function() {
-            $('#add-ingredient-form').submit(function(e) {
-                e.preventDefault();
-                var formData = $(this).serialize();
-                $.ajax({
-                    type: "POST",
-                    url: "{{ url_for('recipes.addrecipe_with_ingredients') }}",
-                    data: formData,
-                    success: function(response) {
-                        console.log(response); 
-                        $('input[name="quantity"]').val('');
-                        $('input[name="unit"]').val('');
-                        $('input[name="name_ingredient"]').val('');
-                    }
-                });
-            });
-    
-            function loadIngredients() {
-            }
-    
-            loadIngredients();
+
+  <script>
+    $(document).ready(function() {
+        // AJAX call for adding a new ingredient
+        $('#add-ingredient-form').submit(function(e) {
+            // Code remains similar to your original for adding ingredients
         });
-    </script>
-    {% endblock %}
+
+        $('.edit-btn').click(function() {
+        var formHtml = $(this).closest('li').find('form.ingredient-edit-form').clone(true); // Clone the form
+        formHtml.removeClass('hidden');
+        formHtml.css('display', ''); // Make sure that the modal is visible
+        // Insert the cloned form into the modal's body and show the modal
+        $('#ingredientEditModal .modal-body').html(formHtml);
+        console.log('Form inserted into modal', $('#ingredientEditModal .modal-body').html()); // Debugging
+        $('#ingredientEditModal').modal('show');
+    });
+
+        // Listen for the save button click in the modal
+        $('#saveIngredientChanges').click(function() {
+        $('#ingredientEditModal .modal-body form').submit(); // Submit the form that's now inside the modal
+    });
+
+        // Manual event listener for closing the modal
+        $('#ingredientEditModal').find('.btn-secondary[data-dismiss="modal"]').click(function() {
+        $('#ingredientEditModal').modal('hide');
+    });
     
+    // AJAX call to edit an ingredient. Delegate from a static ancestor
+    $(document).on('submit', '#ingredientEditModal .modal-body form', function(e) {
+        e.preventDefault();
+        var ingredientId = $(this).data('ingredient-id');
+        var formData = $(this).serialize();
+        
+        var baseUrl = "{{ url_for('recipes.edit_ingredient', id=0) }}";
+        var editUrl = baseUrl.replace('0', ingredientId);
+        
+        $.ajax({
+            type: "POST",
+            url: editUrl,
+            data: formData,
+            success: function(response) {
+            console.log(response);
+             
+            var updatedIngredient = response.updatedIngredient;
+            // Find the <li> element for the updated ingredient
+            var ingredientLi = $('li[data-ingredient-id="' + updatedIngredient.id + '"]');
+
+            // Update the text for each part of the ingredient details
+            ingredientLi.find('.ingredient-quantity').text(updatedIngredient.quantity);
+            ingredientLi.find('.ingredient-unit').text(updatedIngredient.unit);
+            ingredientLi.find('.ingredient-name').text(updatedIngredient.name_ingredient);
+
+            // Hide the modal
+            $('#ingredientEditModal').modal('hide');
+            }
+        });
+    });
+    });
+
+</script>
+
+  {% endblock %}
+</body>
+</html>

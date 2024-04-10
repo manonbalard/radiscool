@@ -2,7 +2,6 @@
 <body>
   {% extends "layout.html" %}
   {% block content %}
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
@@ -38,53 +37,77 @@
 </div>
 
 <script>
+    // Initialize an empty array to store ingredients.
     let ingredients = [];
 
+    // Wait for the DOM to be fully loaded before executing the following.
     $(document).ready(function() {
+        // Attach a click event listener to the 'Add Ingredient' button.
         $('#add-ingredient-button').click(function() {
+            // Retrieve the values entered by the user for quantity, unit, and ingredient name.
             const quantity = $('#quantity').val();
             const unit = $('#unit').val();
             const name = $('#name_ingredient').val();
 
+            // Add the new ingredient as an object to the ingredients array.
             ingredients.push({quantity, unit, name});
 
+            // Log the current state of the ingredients array to the console for debugging.
             console.log(ingredients);
 
+            // Reset the input fields for the next ingredient entry.
             $('#quantity').val('');
             $('#unit').val('');
             $('#name_ingredient').val('');
 
+            // Update the display of ingredients on the webpage.
             displayIngredients();
         });
 
+        // Attach an event listener to the form submission event.
         $('#recipe-form').submit(function(e) {
+            // Prevent the default form submission behavior (page reload).
             e.preventDefault();
+
+            // Retrieve the values entered by the user for the recipe title and description.
             const title = $('#title').val();
             const description = $('#description').val();
 
+            // Send an AJAX POST request to the server with the recipe and ingredients data.
             $.ajax({
-                url: "{{ url_for('recipes.addrecipe_with_ingredients') }}",
-                type: "POST",
-                contentType: "application/json",
-                data: JSON.stringify({title, description, ingredients}),
+                url: "{{ url_for('recipes.addrecipe_with_ingredients') }}", // The URL to which the request is sent.
+                type: "POST", // The type of request.
+                contentType: "application/json", // The content type of the request.
+                data: JSON.stringify({title, description, ingredients}), // The data sent to the server.
                 success: function(response) {
+                    // Log the server's response upon a successful request.
                     console.log(response);
+                    window.location.href = response.redirect; 
                 },
                 error: function(xhr, status, error) {
+                    // Log any error that occurs during the request.
                     console.error(error);
                 }
             });
-        });
-    });
+        }); // This was missing
 
+    }); // This was also missing
+
+    // Define a function to update the ingredients display on the webpage.
     function displayIngredients() {
+        // Select the container where the ingredients will be listed.
         const list = $('#ingredients-list');
+        // Clear any existing ingredients from the list.
         list.empty();
+        // Iterate over each ingredient in the array and add it to the display list.
         ingredients.forEach((ingredient, index) => {
+            // Append a div for each ingredient with its details.
             list.append(`<div>${ingredient.quantity} ${ingredient.unit} ${ingredient.name}</div>`);
         });
     }
 </script>
+
+
 {% endblock %}
 </body>
 </html>
