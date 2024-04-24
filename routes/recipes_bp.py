@@ -1,8 +1,13 @@
-from flask import render_template, request, redirect, url_for, Blueprint, flash, jsonify
+from flask import current_app, render_template, request, redirect, url_for, Blueprint, flash, jsonify
 from database import db
 from models.models  import Ingredient, Recipe
+from werkzeug.utils import secure_filename
+import os, json
 
 recipes = Blueprint('recipes', __name__)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
 @recipes.route("/")
 def index():
@@ -15,15 +20,26 @@ def addrecipe():
 
 @recipes.route('/addrecipe_with_ingredients', methods=['POST'])
 def addrecipe_with_ingredients():
-    data = request.json
-    title = data.get('title')
-    description = data.get('description')
-    ingredient_list = data.get('ingredients', [])
+    title = request.form['title']
+    description = request.form['description']
+    ingredients = json.loads(request.form['ingredients'])  # Convert the JSON string back to a Python list
 
+    # Create new_recipe object from the Recipe model first
     new_recipe = Recipe(title=title, description=description)
+
+     # Handling file upload
+    file = request.files['recipeImage']
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+        # Assuming you have an image field in your Recipe model
+        new_recipe.image = url_for('static', filename='uploads/' + filename)
+
     db.session.add(new_recipe)
     db.session.flush()  
 
+    ingredient_list = ingredients
     for ingredient_data in ingredient_list:
         new_ingredient = Ingredient(
             quantity=ingredient_data['quantity'],

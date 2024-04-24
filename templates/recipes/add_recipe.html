@@ -7,7 +7,7 @@
   <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
   <div class="container">
     <h2>Créez votre recette ci-dessous:</h2>
-    <form id="recipe-form">
+    <form id="recipe-form" enctype="multipart/form-data" method="POST">
         <div class="mb-3">
             <label for="title" class="form-label">Titre de la recette:</label>
             <input type="text" class="form-control" id="title" name="title" placeholder="Entrez le titre de la recette" required>
@@ -32,11 +32,27 @@
             <label for="description" class="form-label">Description de la recette:</label>
             <textarea class="form-control" id="description" name="description" rows="3" placeholder="Décrivez les étapes de la recette" required></textarea>
         </div>
+        <div class="mb-3">
+            <label for="recipeImage" class="form-label">Image de la recette:</label>
+            <input type="file" class="form-control" id="recipeImage" name="recipeImage" accept="image/*" onchange="previewImage();">
+            <img id="imagePreview" src="#" alt="Image Preview" style="max-width: 300px; max-height: 300px; display: none;"/>
+        </div>
         <button type="submit" class="btn btn-primary">Soumettre la recette</button>
     </form>
 </div>
 
 <script>
+        // Function to display image preview
+        function previewImage() {
+        var oFReader = new FileReader();
+        oFReader.readAsDataURL(document.getElementById("recipeImage").files[0]);
+
+        oFReader.onload = function (oFREvent) {
+            document.getElementById("imagePreview").style.display = 'block';
+            document.getElementById("imagePreview").src = oFREvent.target.result;
+        };
+    }
+
     // Initialize an empty array to store ingredients.
     let ingredients = [];
 
@@ -69,29 +85,28 @@
             // Prevent the default form submission behavior (page reload).
             e.preventDefault();
 
-            // Retrieve the values entered by the user for the recipe title and description.
-            const title = $('#title').val();
-            const description = $('#description').val();
+            const formData = new FormData(this);  // Create a new FormData object and pass the form to it
+            formData.append('ingredients', JSON.stringify(ingredients));  // Append ingredients as a JSON string
 
             // Send an AJAX POST request to the server with the recipe and ingredients data.
             $.ajax({
                 url: "{{ url_for('recipes.addrecipe_with_ingredients') }}", // The URL to which the request is sent.
                 type: "POST", // The type of request.
-                contentType: "application/json", // The content type of the request.
-                data: JSON.stringify({title, description, ingredients}), // The data sent to the server.
+                data: formData,
+                processData: false,  // Prevent jQuery from converting the FormData into a string
+                contentType: false,  // Prevent jQuery from setting the content type (let the browser set it)
                 success: function(response) {
-                    // Log the server's response upon a successful request.
                     console.log(response);
-                    window.location.href = response.redirect; 
+                    window.location.href = response.redirect;
                 },
                 error: function(xhr, status, error) {
                     // Log any error that occurs during the request.
                     console.error(error);
                 }
             });
-        }); // This was missing
+        }); 
 
-    }); // This was also missing
+    }); 
 
     // Define a function to update the ingredients display on the webpage.
     function displayIngredients() {

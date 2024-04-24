@@ -2,6 +2,14 @@
 {% block content %}
 <div class="container">
     <h1>{{ recipe.title }}</h1>
+
+    <!-- Image Display -->
+    {% if recipe.image %}
+    <img src="{{ recipe.image }}" alt="Image of {{ recipe.title }}" style="max-width: 400px; height: auto;">
+    {% else %}
+    <p>No image available for this recipe.</p>
+    {% endif %}
+
     <h2>Ingrédients</h2>
     <ul>
         {% for ingredient in ingredients %}
@@ -11,6 +19,7 @@
         {% endfor %}
     </ul>
     <p>{{ recipe.description }}</p>
+
     
 
 
