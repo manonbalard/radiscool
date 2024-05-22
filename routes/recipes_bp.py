@@ -1,4 +1,5 @@
 from flask import current_app, render_template, request, redirect, url_for, Blueprint, flash, jsonify
+from flask_login import current_user
 from database import db
 from models.models  import Ingredient, Recipe
 from werkzeug.utils import secure_filename
@@ -25,7 +26,7 @@ def addrecipe_with_ingredients():
     ingredients = json.loads(request.form['ingredients'])  # Convert the JSON string back to a Python list
 
     # Create new_recipe object from the Recipe model first
-    new_recipe = Recipe(title=title, description=description)
+    new_recipe = Recipe(title=title, description=description, user_id=current_user.id)
 
      # Handling file upload
     file = request.files['recipeImage']

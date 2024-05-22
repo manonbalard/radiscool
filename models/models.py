@@ -7,6 +7,8 @@ class Recipe(db.Model):
     ingredients = db.relationship('Ingredient', backref='recipe', lazy=True)
     image = db.Column(db.String(255), nullable=True)
     description = db.Column(db.Text, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
 
 class Ingredient(db.Model):
     id = db.Column(db.Integer, primary_key = True)
@@ -29,3 +31,4 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(64), index=True, unique=True)
     email = db.Column(db.String(120), index=True, unique=True)
     password = db.Column(db.String(128))
+    recipes = db.relationship('Recipe', backref='user', lazy=True)

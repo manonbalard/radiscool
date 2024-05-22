@@ -1,19 +1,25 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container">
-    <h1>Liste des recettes</h1>
-    <a href="{{ url_for('recipes.addrecipe') }}" class="btn btn-primary mb-3">Ajouter une nouvelle recette</a>
-    <div class="list-group">
+    <h1 class="mb-3">Liste des recettes</h1>
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{{ url_for('recipes.addrecipe') }}" class="btn btn-primary">Ajouter une nouvelle recette</a>
+    </div>
+    <div class="row">
         {% for recipe in recipes %}
-        <div class="list-group-item list-group-item-action flex-column align-items-start">
-            <div class="d-flex w-100 justify-content-between">
-                <h5 class="mb-1">{{ recipe.title }}</h5>
-                <div>
-                    <button onclick="location.href='{{ url_for('recipes.view_recipe', id=recipe.id) }}'" class="btn-as-link">Voir</button> |
-                    <button onclick="location.href='{{ url_for('recipes.edit_recipe', id=recipe.id) }}'" class="btn-as-link">Modifier</button> |
-                    <form action="{{ url_for('recipes.delete_recipe', id=recipe.id) }}" method="post" class="d-inline">
-                        <button type="submit" class="btn-as-link" onclick="return confirm('Are you sure?');">Supprimer</button>
-                    </form>
+        <div class="col-md-4 mb-4 d-flex">
+            <div class="card flex-fill d-flex flex-column">
+                {% if recipe.image %}
+                <img src="{{ recipe.image }}" class="card-img-top" alt="Image for {{ recipe.title }}">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ recipe.title }}</h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <button onclick="location.href='{{ url_for('recipes.view_recipe', id=recipe.id) }}'" class="btn btn-link p-0 m-0">Voir</button>
+                        <button onclick="location.href='{{ url_for('recipes.edit_recipe', id=recipe.id) }}'" class="btn btn-link p-0 m-0">Modifier</button>
+                        <form action="{{ url_for('recipes.delete_recipe', id=recipe.id) }}" method="post" class="d-inline m-0 p-0"><button type="submit" class="btn btn-link p-0 m-0" onclick="return confirm('Are you sure?');">Supprimer</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -23,4 +29,3 @@
     </div>
 </div>
 {% endblock %}
-
