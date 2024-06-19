@@ -1,8 +1,8 @@
 from flask import current_app, render_template, request, redirect, url_for, Blueprint, flash, jsonify
 from flask_login import current_user
-from database import db
-from models.models  import Ingredient, Recipe
+from models.models import Ingredient, Recipe
 from werkzeug.utils import secure_filename
+from extensions import db, photos  # Import photos from extensions
 import os, json
 
 recipes = Blueprint('recipes', __name__)
@@ -13,7 +13,7 @@ def allowed_file(filename):
 @recipes.route("/")
 def index():
     all_recipes = Recipe.query.all()
-    return render_template('recipes/recipes.html', recipes = all_recipes)
+    return render_template('recipes/recipes.html', recipes=all_recipes)
 
 @recipes.route("/addrecipe", methods=['GET'])
 def addrecipe():
@@ -25,17 +25,16 @@ def addrecipe_with_ingredients():
     description = request.form['description']
     ingredients = json.loads(request.form['ingredients'])  # Convert the JSON string back to a Python list
 
-    # Create new_recipe object from the Recipe model first
+    # Create new_recipe object 
     new_recipe = Recipe(title=title, description=description, user_id=current_user.id)
 
-     # Handling file upload
-    file = request.files['recipeImage']
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
-        # Assuming you have an image field in your Recipe model
-        new_recipe.image = url_for('static', filename='uploads/' + filename)
+    # Handling file upload
+    if 'recipeImage' in request.files:
+        file = request.files['recipeImage']
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file_path = photos.save(file, name=filename)
+            new_recipe.image = url_for('static', filename='uploads/images/' + filename)
 
     db.session.add(new_recipe)
     db.session.flush()  

@@ -1,4 +1,4 @@
-from database import db
+from extensions import db
 from flask_login import UserMixin
 
 class Recipe(db.Model):
