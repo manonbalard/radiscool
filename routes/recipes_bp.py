@@ -87,32 +87,60 @@ def edit_recipe(id):
     
     # GET request handling (show the form)
     recipe = Recipe.query.get_or_404(id)
-    return render_template('recipes/edit_recipe.html', recipe=recipe)
+    ingredients = recipe.ingredients
+    return render_template('recipes/edit_recipe.html', recipe=recipe, ingredients=ingredients)
 
-@recipes.route('recipes/edit_ingredient/<int:id>', methods=['POST'])
+@recipes.route('/recipes/edit_ingredient/<int:id>', methods=['POST'])
 def edit_ingredient(id):
     ingredient = Ingredient.query.get_or_404(id)
+    
+    # Fetch the JSON data
+    data = request.get_json()
+    name_ingredient = data.get('name_ingredient')
+    quantity = data.get('quantity')
+    unit = data.get('unit')
+
+    # Update the ingredient with new values    
+    if name_ingredient:
+        ingredient.name_ingredient = name_ingredient
+    if quantity:
+        ingredient.quantity = quantity
+    if unit:
+        ingredient.unit = unit
+
+    # Commit changes to the database
+    db.session.commit()
+
+    # Return the updated ingredient details
+    updated_values = {
+        'id': ingredient.id,
+        'name_ingredient': ingredient.name_ingredient,
+        'quantity': ingredient.quantity,
+        'unit': ingredient.unit
+    }
+    return jsonify({'updatedIngredient': updated_values}), 200
+
+
+@recipes.route('/recipes/add_ingredient/<int:recipe_id>', methods=['POST'])
+def add_ingredient(recipe_id):
+    recipe = Recipe.query.get_or_404(recipe_id)
     
     # Fetch the form data
     name_ingredient = request.form.get('name_ingredient')
     quantity = request.form.get('quantity')
     unit = request.form.get('unit')
 
-    # Update the ingredient with new values    
-    updated_values = {}
-    if name_ingredient:
-        ingredient.name_ingredient = name_ingredient
-        updated_values['name_ingredient'] = name_ingredient
-    if quantity:
-        ingredient.quantity = quantity
-        updated_values['quantity'] = quantity
-    if unit:
-        ingredient.unit = unit
-        updated_values['unit'] = unit
+    # Create a new ingredient
+    new_ingredient = Ingredient(
+        name_ingredient=name_ingredient,
+        quantity=quantity,
+        unit=unit,
+        recipe_id=recipe.id
+    )
 
-    # Commit changes to the database
+    # Add the new ingredient to the database
+    db.session.add(new_ingredient)
     db.session.commit()
 
-    # Return the updated ingredient details
-    updated_values['id'] = ingredient.id  # Make sure to return the id for client-side use
-    return jsonify({'updatedIngredient': updated_values}), 200
+    # Return the new ingredient details
+    return jsonify({'id': new_ingredient.id, 'name_ingredient': new_ingredient.name_ingredient, 'quantity': new_ingredient.quantity, 'unit': new_ingredient.unit}), 200

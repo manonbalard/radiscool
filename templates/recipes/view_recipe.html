@@ -3,27 +3,43 @@
 <div class="container">
     <h1>{{ recipe.title }}</h1>
 
-    <!-- Image Display -->
-    {% if recipe.image %}
-    <img src="{{ recipe.image }}" alt="Image of {{ recipe.title }}" style="max-width: 400px; height: auto;">
-    {% else %}
-    <p>No image available for this recipe.</p>
-    {% endif %}
+    <div class="row mb-4">
+        <!-- Image Display on the left -->
+        <div class="col-md-6">
+            {% if recipe.image %}
+            <img src="{{ recipe.image }}" alt="Image of {{ recipe.title }}" style="max-width: 100%; height: auto;">
+            {% else %}
+            <p>No image available for this recipe.</p>
+            {% endif %}
+        </div>
 
-    <h2>Ingrédients</h2>
-    <ul>
-        {% for ingredient in ingredients %}
-        <li>{{ ingredient.quantity }} {{ ingredient.unit }} of {{ ingredient.name_ingredient }}</li>
-        {% else %}
-        <li>No ingredients found.</li>
-        {% endfor %}
-    </ul>
-    <p>{{ recipe.description }}</p>
+        <!-- Ingredients on the right -->
+        <div class="col-md-6">
+            <h2>Ingrédients</h2>
+            <ul>
+            {% for ingredient in ingredients %}
+            <li>{{ ingredient.quantity }} {{ ingredient.unit }} of {{ ingredient.name_ingredient }}</li>
+            {% else %}
+            <li>No ingredients found.</li>
+            {% endfor %}
+            </ul>
+        </div>
+    </div>
 
-    
+    <!-- Description of the recipe below -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>Description</h2>
+            <p>{{ recipe.description }}</p>
+        </div>
+    </div>
 
-
-    <a href="{{ url_for('recipes.index') }}" class="btn btn-primary">Retour à la liste des recettes</a>
-    <a href="{{ url_for('recipes.edit_recipe', id=recipe.id) }}" class="btn btn-secondary">Modifier la recette</a>
+    <!-- Buttons -->
+    <div class="row">
+        <div class="col-12">
+            <a href="{{ url_for('recipes.index') }}" class="btn btn-primary">Retour à la liste des recettes</a>
+            <a href="{{ url_for('recipes.edit_recipe', id=recipe.id) }}" class="btn btn-secondary">Modifier la recette</a>
+        </div>
+    </div>
 </div>
 {% endblock %}
