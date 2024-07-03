@@ -100,53 +100,58 @@
                 $('#ingredientEditModal .modal-body').html(formHtml);
                 $('#ingredientEditModal').modal('show');
             });
-        
+    
             // Save changes button click handler
             $('#saveIngredientChanges').click(function() {
                 $('#ingredientEditModal .modal-body form').submit();
             });
-        
+    
             // AJAX request to edit ingredient
             $(document).on('submit', '#ingredientEditModal .modal-body form', function(e) {
-    e.preventDefault();
-    var ingredientId = $(this).closest('form').data('ingredient-id');
-    var formData = $(this).serialize();
-
-    if (!ingredientId) {
-        console.error('Ingredient ID is missing or invalid.');
-        return; // Exit early if ingredientId is not valid
-    }
-
-    var editUrl = "{{ url_for('recipes.edit_ingredient', id=0) }}"; // Default id=0
-    editUrl = editUrl.slice(0, -1) + ingredientId; // Replace the placeholder id=0 with the actual ingredientId
-
-    $.ajax({
-        type: "POST",
-        url: editUrl,
-        contentType: 'application/json',
-        data: JSON.stringify(formData),
-        success: function(response) {
-            console.log(response);
-
-            var updatedIngredient = response.updatedIngredient;
-            var ingredientLi = $('li[data-ingredient-id="' + updatedIngredient.id + '"]');
-            ingredientLi.find('.ingredient-quantity').text(updatedIngredient.quantity);
-            ingredientLi.find('.ingredient-unit').text(updatedIngredient.unit);
-            ingredientLi.find('.ingredient-name').text(updatedIngredient.name_ingredient);
-
-            $('#ingredientEditModal').modal('hide');
-        },
-        error: function(error) {
-            console.error(error);
-        }
-    });
-});
-        
+                e.preventDefault();
+                var ingredientId = $(this).closest('form').data('ingredient-id');
+    
+                // Extract values from the form
+                var newName = $(this).find('input[name="name_ingredient"]').val();
+                var newQuantity = $(this).find('input[name="quantity"]').val();
+                var newUnit = $(this).find('input[name="unit"]').val();
+    
+                var editUrl = "{{ url_for('recipes.edit_ingredient', id=0) }}"; // Default id=0
+                editUrl = editUrl.slice(0, -1) + ingredientId; // Replace the placeholder id=0 with the actual ingredientId
+    
+                var formData = {
+                    name_ingredient: newName,
+                    quantity: newQuantity,
+                    unit: newUnit
+                };
+    
+                $.ajax({
+                    type: "POST",
+                    url: editUrl,
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function(response) {
+                        console.log('Updated ingredient:', response);
+    
+                        var updatedIngredient = response.updatedIngredient;
+                        var ingredientLi = $('li[data-ingredient-id="' + updatedIngredient.id + '"]');
+                        ingredientLi.find('.ingredient-quantity').text(updatedIngredient.quantity);
+                        ingredientLi.find('.ingredient-unit').text(updatedIngredient.unit);
+                        ingredientLi.find('.ingredient-name').text(updatedIngredient.name_ingredient);
+    
+                        $('#ingredientEditModal').modal('hide');
+                    },
+                    error: function(error) {
+                        console.error('Error updating ingredient:', error);
+                    }
+                });
+            });
+    
             // AJAX request to add new ingredient
             $('#add-ingredient-form').submit(function(e) {
                 e.preventDefault();
                 var formData = $(this).serialize();
-        
+    
                 $.ajax({
                     type: "POST",
                     url: "{{ url_for('recipes.add_ingredient', recipe_id=recipe.id) }}",
@@ -161,8 +166,8 @@
                 });
             });
         });
-        </script>
-        
+    </script>
+            
     {% endblock %}
     
 </body>

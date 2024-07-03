@@ -94,8 +94,14 @@ def edit_recipe(id):
 def edit_ingredient(id):
     ingredient = Ingredient.query.get_or_404(id)
     
+    # Debug: Print request data
+    print("Request Data:", request.data)
+    print("Request JSON:", request.json)
+
     # Fetch the JSON data
     data = request.get_json()
+    print("Received JSON Data:", data)
+
     name_ingredient = data.get('name_ingredient')
     quantity = data.get('quantity')
     unit = data.get('unit')
