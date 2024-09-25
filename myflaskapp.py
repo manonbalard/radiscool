@@ -7,7 +7,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 class Config(object):
     SECRET_KEY = "Secret Key"
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:''@localhost/radiscool'
+    SQLALCHEMY_DATABASE_URI = 'mysql://root:''@localhost/radiscool_test'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOADED_PHOTOS_DEST = os.path.join(basedir, 'static', 'uploads', 'images')
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
