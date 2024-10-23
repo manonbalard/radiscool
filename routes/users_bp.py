@@ -3,7 +3,7 @@ from flask import render_template, request, redirect, url_for, Blueprint, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
-from models.models  import User
+from models.models_sql  import User
 
 users = Blueprint('users', __name__)
 
@@ -19,14 +19,22 @@ def login_post():
 
     user = User.query.filter_by(email=email).first()
 
-    print(email, password, user)
-
     if not user:
-        flash('Please check your login details and try again.')
-        return redirect(url_for('users.login')) 
+        flash('Email not found.')
+        print("Utilisateur introuvable pour l'email :", email)
+        return redirect(url_for('users.login'))
+
+    if not check_password_hash(user.password, password):
+        flash('Password incorrect.')
+        print("Mot de passe incorrect pour l'utilisateur :", user.email)
+        return redirect(url_for('users.login'))
 
     login_user(user, remember=remember)
-    return redirect(url_for('home'))
+
+    next_page = request.args.get('next')
+    if next_page:
+        return redirect(next_page)  # Redirige vers l'URL initiale après la connexion
+    return redirect(url_for('home'))  # Sinon, redirige vers la page d'accueil
 
 @users.route('/signup')
 def signup():
@@ -44,12 +52,19 @@ def signup_post():
         flash('Email address already exists')
         return redirect(url_for('users.signup'))
     
-    new_user = User(email=email, username=username, password=generate_password_hash(password))
+    # Hachage du mot de passe
+    hashed_password = generate_password_hash(password)
+    
+    # Création du nouvel utilisateur
+    new_user = User(email=email, username=username, password=hashed_password)
+    print("Saisi :", password)
+    print("Haché :", hashed_password)
 
     db.session.add(new_user)
     db.session.commit()
     
     return redirect(url_for('users.login'))
+
 
 @users.route('/profile')
 @login_required

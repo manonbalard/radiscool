@@ -2,6 +2,7 @@ from flask_uploads import UploadSet, configure_uploads, IMAGES
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
+from pymongo import MongoClient
 
 # Initialize extensions
 db = SQLAlchemy()
@@ -9,13 +10,18 @@ migrate = Migrate()
 login_manager = LoginManager()
 photos = UploadSet('photos', IMAGES)
 
+# Initialiser la connexion à MongoDB
+client = MongoClient("mongodb://localhost:27017/")  
+mongo_db = client['Radiscool']  
+
 # Function to configure extensions
 def configure_extensions(app):
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    configure_uploads(app, photos)
     login_manager.login_view = 'users.login'
+    configure_uploads(app, photos)
+    
 
     # Ensure the upload directory exists
     import os

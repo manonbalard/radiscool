@@ -5,6 +5,7 @@
   <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  
   <div class="container">
     <h2>Créez votre recette ci-dessous:</h2>
     <form id="recipe-form" enctype="multipart/form-data" method="POST">
@@ -12,6 +13,8 @@
             <label for="title" class="form-label">Titre de la recette:</label>
             <input type="text" class="form-control" id="title" name="title" placeholder="Entrez le titre de la recette" required>
         </div>
+
+        <!-- Section des ingrédients -->
         <h3>Ingrédients:</h3>
         <ul id="ingredients-list" class="list-group mb-3"></ul>
         <div class="row mb-3">
@@ -28,10 +31,14 @@
                 <button type="button" class="btn btn-secondary" id="add-ingredient-button">Ajouter un ingrédient</button>
             </div>
         </div>
+
+        <!-- Section description -->
         <div class="mb-3">
             <label for="description" class="form-label">Description de la recette:</label>
             <textarea class="form-control" id="description" name="description" rows="3" placeholder="Décrivez les étapes de la recette" required></textarea>
         </div>
+
+        <!-- Section image -->
         <div class="mb-3">
             <label for="recipeImage" class="form-label">Image de la recette:</label>
             <input type="file" class="form-control" id="recipeImage" name="recipeImage" accept="image/*" onchange="previewImage();">
@@ -39,11 +46,11 @@
         </div>
         <button type="submit" class="btn btn-primary">Soumettre la recette</button>
     </form>
-</div>
+  </div>
 
-<script>
-        // Function to display image preview
-        function previewImage() {
+  <script>
+    // Function to display image preview
+    function previewImage() {
         var oFReader = new FileReader();
         oFReader.readAsDataURL(document.getElementById("recipeImage").files[0]);
 
@@ -67,9 +74,6 @@
 
             // Add the new ingredient as an object to the ingredients array.
             ingredients.push({quantity, unit, name});
-
-            // Log the current state of the ingredients array to the console for debugging.
-            console.log(ingredients);
 
             // Reset the input fields for the next ingredient entry.
             $('#quantity').val('');
@@ -100,13 +104,11 @@
                     window.location.href = response.redirect;
                 },
                 error: function(xhr, status, error) {
-                    // Log any error that occurs during the request.
                     console.error(error);
                 }
             });
-        }); 
-
-    }); 
+        });
+    });
 
     // Define a function to update the ingredients display on the webpage.
     function displayIngredients() {
@@ -116,13 +118,11 @@
         list.empty();
         // Iterate over each ingredient in the array and add it to the display list.
         ingredients.forEach((ingredient, index) => {
-            // Append a div for each ingredient with its details.
             list.append(`<div>${ingredient.quantity} ${ingredient.unit} ${ingredient.name}</div>`);
         });
     }
-</script>
+  </script>
 
-
-{% endblock %}
+  {% endblock %}
 </body>
 </html>

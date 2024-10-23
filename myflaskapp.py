@@ -11,6 +11,7 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOADED_PHOTOS_DEST = os.path.join(basedir, 'static', 'uploads', 'images')
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+    MONGO_URI = "mongodb://localhost:27017/Radiscool"
 
 # App Initialization
 app = Flask(__name__)
@@ -21,8 +22,9 @@ login_manager.init_app(app)
 # Configure extensions
 configure_extensions(app)
 
-# Import models after db is initialized
-from models.models import Recipe, Ingredient, User
+# Import models 
+from models.models_sql import Recipe, Ingredient, User
+from models.models_nosql import CommentNoSQL  
 
 @login_manager.user_loader
 def load_user(user_id):

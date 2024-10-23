@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Edit Recipe</title>
+    <title>Modifier la Recette</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
@@ -10,14 +10,10 @@
     {% extends "layout.html" %}
 
     {% block content %}
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    
     <div class="container">
         <h2>Modifier la recette: {{ recipe.title }}</h2>
         <!-- Main recipe form for updating the recipe's title and description -->
-        <form action="{{ url_for('recipes.edit_recipe', id=recipe.id) }}" method="post">
+        <form action="{{ url_for('recipes.edit_recipe', id=recipe.id) }}" method="post" enctype="multipart/form-data">
             <input type="hidden" name="recipe_id" value="{{ recipe.id }}">
             <div class="mb-3">
                 <label for="title" class="form-label">Titre</label>
@@ -26,6 +22,11 @@
             <div class="mb-3">
                 <label for="description" class="form-label">Description</label>
                 <textarea class="form-control" id="description" name="description" rows="3" required>{{ recipe.description }}</textarea>
+            </div>
+            <div class="mb-3">
+                <label for="recipeImage" class="form-label">Image de la recette:</label>
+                <input type="file" class="form-control" id="recipeImage" name="recipeImage" accept="image/*" onchange="previewImage();">
+                <img id="imagePreview" src="{{ recipe.image_url }}" alt="Image Preview" style="max-width: 300px; max-height: 300px; display: {{ 'none' if not recipe.image_url else 'block' }};"/>
             </div>
             <button type="submit" class="btn btn-primary">Modifier la recette</button>
         </form>
@@ -38,13 +39,14 @@
                     <div class="ingredient-details">
                         <span class="ingredient-quantity">{{ ingredient.quantity }}</span>
                         <span class="ingredient-unit">{{ ingredient.unit }}</span>
-                        <span class="ingredient-name">{{ ingredient.name_ingredient }}</span>
+                        <span class="ingredient-name">{{ ingredient.ingredient.name_ingredient }}</span>
                         <button type="button" class="btn btn-info edit-btn">Modifier</button>
                     </div>
-                    <form class="ingredient-edit-form hidden" data-ingredient-id="{{ ingredient.id }}"> <!-- Form fields are hidden by default -->
-                        <input type="text" name="quantity" placeholder="Quantité" value="{{ ingredient.quantity }}">
-                        <input type="text" name="unit" placeholder="Unité" value="{{ ingredient.unit }}">
-                        <input type="text" name="name_ingredient" placeholder="Nom" value="{{ ingredient.name_ingredient }}">
+                    <form class="ingredient-edit-form hidden" data-ingredient-id="{{ ingredient.id }}">
+                        <input type="text" name="quantity" placeholder="Quantité" value="{{ ingredient.quantity }}" required>
+                        <input type="text" name="unit" placeholder="Unité" value="{{ ingredient.unit }}" required>
+                        <input type="text" name="name_ingredient" placeholder="Nom" value="{{ ingredient.ingredient.name_ingredient }}" required>
+                        <button type="submit" class="btn btn-success">Enregistrer</button>
                     </form>
                 </li>
             {% else %}
@@ -52,123 +54,88 @@
             {% endfor %}
         </ul>   
         
-        <!-- Ingredient Edit Modal -->
-        <div class="modal fade" id="ingredientEditModal" tabindex="-1" role="dialog" aria-labelledby="ingredientEditModalLabel" aria-hidden="true">
-          <div class="modal-dialog" role="document">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title" id="ingredientEditModalLabel">Edit Ingredient</h5>
-              </div>
-              <div class="modal-body">
-                <!-- Ingredient edit form will be dynamically inserted here -->
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="saveIngredientChanges">Save changes</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        
         <!-- Separate form for adding new ingredients -->
         <form id="add-ingredient-form" method="POST">
             <input type="hidden" name="recipe_id" value="{{ recipe.id }}">
-            <div class="row">
+            <div class="row mb-3">
                 <div class="col">
-                    <input type="text" class="form-control" name="quantity" placeholder="Quantité">
+                    <input type="text" class="form-control" name="quantity" placeholder="Quantité" required>
                 </div>
                 <div class="col">
-                    <input type="text" class="form-control" name="unit" placeholder="Unité">
+                    <input type="text" class="form-control" name="unit" placeholder="Unité" required>
                 </div>
                 <div class="col">
-                    <input type="text" class="form-control" name="name_ingredient" placeholder="Nom de l'ingrédient">
+                    <input type="text" class="form-control" name="name_ingredient" placeholder="Nom de l'ingrédient" required>
                 </div>
                 <div class="col">
-                    <button type="submit" class="btn btn-secondary">Ajouter l'ingrédient</button>
+                    <button type="button" class="btn btn-secondary" id="add-ingredient-button">Ajouter un ingrédient</button>
                 </div>
             </div>
         </form>
     </div>
-    
+
     <script>
-        $(document).ready(function() {
-            // Edit button click handler
-            $(document).on('click', '.edit-btn', function() {
-                var formHtml = $(this).closest('li').find('form.ingredient-edit-form').clone(true);
-                formHtml.removeClass('hidden');
-                formHtml.css('display', '');
-                $('#ingredientEditModal .modal-body').html(formHtml);
-                $('#ingredientEditModal').modal('show');
+    $(document).ready(function() {
+        const recipeId = $('#recipe-id').val(); // Récupérez l'ID de la recette à partir de l'élément caché
+    
+            // Handle the edit button click to toggle the edit form for each ingredient
+            $('.edit-btn').click(function() {
+                const ingredientId = $(this).closest('li').data('ingredient-id');
+                $(this).closest('li').find('.ingredient-edit-form').toggleClass('hidden');
             });
     
-            // Save changes button click handler
-            $('#saveIngredientChanges').click(function() {
-                $('#ingredientEditModal .modal-body form').submit();
-            });
-    
-            // AJAX request to edit ingredient
-            $(document).on('submit', '#ingredientEditModal .modal-body form', function(e) {
-                e.preventDefault();
-                var ingredientId = $(this).closest('form').data('ingredient-id');
-    
-                // Extract values from the form
-                var newName = $(this).find('input[name="name_ingredient"]').val();
-                var newQuantity = $(this).find('input[name="quantity"]').val();
-                var newUnit = $(this).find('input[name="unit"]').val();
-    
-                var editUrl = "{{ url_for('recipes.edit_ingredient', id=0) }}"; // Default id=0
-                editUrl = editUrl.slice(0, -1) + ingredientId; // Replace the placeholder id=0 with the actual ingredientId
-    
-                var formData = {
-                    name_ingredient: newName,
-                    quantity: newQuantity,
-                    unit: newUnit
-                };
-    
-                $.ajax({
-                    type: "POST",
-                    url: editUrl,
-                    contentType: 'application/json',
-                    data: JSON.stringify(formData),
-                    success: function(response) {
-                        console.log('Updated ingredient:', response);
-    
-                        var updatedIngredient = response.updatedIngredient;
-                        var ingredientLi = $('li[data-ingredient-id="' + updatedIngredient.id + '"]');
-                        ingredientLi.find('.ingredient-quantity').text(updatedIngredient.quantity);
-                        ingredientLi.find('.ingredient-unit').text(updatedIngredient.unit);
-                        ingredientLi.find('.ingredient-name').text(updatedIngredient.name_ingredient);
-    
-                        $('#ingredientEditModal').modal('hide');
-                    },
-                    error: function(error) {
-                        console.error('Error updating ingredient:', error);
+            // Handle the ingredient edit form submission
+            $('.ingredient-edit-form').submit(function(e) {
+        e.preventDefault(); // Prevent default form submission
+
+        const ingredientId = $(this).data('ingredient-id');
+        const formData = $(this).serialize(); // Récupérer les données du formulaire
+
+        // Send AJAX request to update ingredient
+        $.ajax({
+            url: '/recipes/edit_ingredient/' + recipeId + '/' + ingredientId, // Utilisez recipeId et ingredientId
+            type: 'POST',
+            data: formData,
+            success: function(response) {
+                alert(response.message); // Affiche un message de succès
+            },
+            error: function(xhr, status, error) {
+                console.error(error);
                     }
                 });
             });
     
-            // AJAX request to add new ingredient
-            $('#add-ingredient-form').submit(function(e) {
-                e.preventDefault();
-                var formData = $(this).serialize();
+            // Handle adding new ingredients
+            $('#add-ingredient-button').click(function() {
+                const formData = $('#add-ingredient-form').serialize();  // Serialize the add ingredient form
     
                 $.ajax({
-                    type: "POST",
-                    url: "{{ url_for('recipes.add_ingredient', recipe_id=recipe.id) }}",
+                    url: '/add_ingredient',  // Change to the actual URL for adding ingredient
+                    type: 'POST',
                     data: formData,
                     success: function(response) {
-                        console.log(response);
-                        location.reload();
+                        alert(response.message); // Affiche un message de succès
+                        // Mettez à jour l'interface utilisateur pour afficher le nouvel ingrédient
                     },
-                    error: function(error) {
+                    error: function(xhr, status, error) {
                         console.error(error);
                     }
                 });
             });
         });
-    </script>
-            
-    {% endblock %}
     
+        // Function to display image preview
+        function previewImage() {
+            var oFReader = new FileReader();
+            oFReader.readAsDataURL(document.getElementById("recipeImage").files[0]);
+    
+            oFReader.onload = function (oFREvent) {
+                document.getElementById("imagePreview").style.display = 'block';
+                document.getElementById("imagePreview").src = oFREvent.target.result;
+            };
+        }
+    </script>
+    
+    {% endblock %}
 </body>
 </html>
