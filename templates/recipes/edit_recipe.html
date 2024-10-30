@@ -4,6 +4,7 @@
     <title>Modifier la Recette</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 </head>
 <body>
@@ -39,7 +40,8 @@
                         <span class="ingredient-quantity">{{ recipe_ingredient.quantity }}</span>
                         <span class="ingredient-unit">{{ recipe_ingredient.unit }}</span>
                         <span class="ingredient-name">{{ recipe_ingredient.ingredient.name_ingredient }}</span>
-                        <button type="button" class="btn btn-info edit-btn">Modifier</button>
+                        <button type="button" class="btn btn-info btn-sm edit-btn"><i class="fas fa-edit"></i> Modifier</button>
+                        <button type="button" class="btn btn-danger btn-sm delete-btn"><i class="fas fa-trash"></i> Supprimer</button>
                     </div>
                     <form class="ingredient-edit-form hidden" data-ingredient-id="{{ recipe_ingredient.ingredient_id }}">
                         <input type="text" name="quantity" placeholder="Quantité" value="{{ recipe_ingredient.quantity }}" required>
@@ -52,6 +54,7 @@
                 <li>Pas d'ingrédient trouvé</li>
             {% endfor %}
         </ul>
+        
 
           
         
@@ -93,7 +96,7 @@
                 const formData = {
                     quantity: $(this).find('input[name="quantity"]').val(),
                     unit: $(this).find('input[name="unit"]').val()
-                    };
+                };
         
                 // Send AJAX request to update ingredient
                 $.ajax({
@@ -103,6 +106,7 @@
                     data: JSON.stringify(formData),    // Convertir les données en JSON
                     success: function(response) {
                         alert(response.message); // Affiche un message de succès
+                        refreshIngredientList(recipeId); // Rafraîchit la liste des ingrédients après la mise à jour
                     },
                     error: function(xhr, status, error) {
                         console.error(error);
@@ -110,6 +114,53 @@
                 });
             });
         
+            // Fonction pour supprimer un ingrédient
+            $(document).on('click', '.delete-btn', function() {
+                const ingredientId = $(this).closest('li').data('ingredient-id');
+    
+                if (confirm("Voulez-vous vraiment supprimer cet ingrédient ?")) {
+                    $.ajax({
+                        url: '/recipes/delete_ingredient/' + recipeId + '/' + ingredientId,
+                        type: 'POST',
+                        success: function(response) {
+                            alert(response.message); // Affiche un message de succès
+                            refreshIngredientList(recipeId); // Rafraîchit la liste des ingrédients après la suppression
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Erreur lors de la suppression de l\'ingrédient:', error);
+                        }
+                    });
+                }
+            });
+    
+            // Fonction pour rafraîchir la liste des ingrédients
+            function refreshIngredientList(recipeId) {
+                $.ajax({
+                    url: '/recipes/get_ingredients/' + recipeId,
+                    type: 'GET',
+                    success: function(ingredients) {
+                        // Sélectionne l'élément de la liste des ingrédients dans le DOM
+                        const ingredientList = $('#ingredients-list');
+                        ingredientList.empty(); // Vide la liste existante
+    
+                        // Remplit la liste avec les ingrédients actualisés
+                        ingredients.forEach(function(ingredient) {
+                            const listItem = `
+                            <li data-ingredient-id="${ingredient.id}">
+                                <span>${ingredient.quantity} ${ingredient.unit} ${ingredient.name}</span>
+                                <button type="button" class="btn btn-info edit-btn">Modifier</button>
+                                <button type="button" class="btn btn-danger delete-btn">Supprimer</button>
+                            </li>
+                        `;
+                        ingredientList.append(listItem);
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Erreur lors du chargement des ingrédients:', error);
+                    }
+                });
+            }
+    
             // Handle adding new ingredients
             $('#add-ingredient-button').click(function() {
                 const formData = $('#add-ingredient-form').serialize(); // Serialize the add ingredient form
@@ -120,6 +171,7 @@
                     data: formData,
                     success: function(response) {
                         alert(response.message); // Affiche un message de succès
+                        refreshIngredientList(recipeId); // Rafraîchit la liste des ingrédients après l'ajout
                     },
                     error: function(xhr, status, error) {
                         console.error(error);
@@ -138,7 +190,8 @@
                 document.getElementById("imagePreview").src = oFREvent.target.result;
             };
         }
-        </script>
+    </script>
+    
         
     
     {% endblock %}

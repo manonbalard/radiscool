@@ -86,6 +86,16 @@ def delete_recipe(id):
     flash('Recipe deleted.')
     return redirect(url_for('recipes.index'))
 
+@recipes.route('/delete_ingredient/<int:recipe_id>/<int:ingredient_id>', methods=['POST'])
+def delete_ingredient(recipe_id, ingredient_id):
+    # Trouve la relation entre la recette et l'ingrédient dans RecipeIngredient
+    recipe_ingredient = RecipeIngredient.query.filter_by(recipe_id=recipe_id, ingredient_id=ingredient_id).first_or_404()
+
+    # Supprime la relation
+    db.session.delete(recipe_ingredient)
+    db.session.commit()
+
+    return jsonify({'message': 'Ingrédient supprimé avec succès'}), 200
 
 
 @recipes.route('/edit/<int:id>', methods=['GET', 'POST'])
@@ -97,34 +107,45 @@ def edit_recipe(id):
         title = request.form.get('title')
         description = request.form.get('description')
         ingredients = request.form.get('ingredients', None)
+
+        # Convertir JSON string to list si des ingrédients sont fournis
         if ingredients is not None:
             ingredients = json.loads(ingredients)  # Convert JSON string to list
         else:
-            return "Ingredients are required", 400
+            ingredients = []  # Initialise comme une liste vide si pas d'ingrédients fournis
 
+        # Vérifier les ingrédients existants
+        existing_ingredients = RecipeIngredient.query.filter_by(recipe_id=recipe.id).all()
+
+        # Si aucune nouvelle liste d'ingrédients n'est fournie, on renvoie une erreur
+        if not ingredients and not existing_ingredients:
+            return "At least one ingredient is required", 400
+
+        # Mise à jour des informations de la recette
         recipe.title = title
         recipe.description = description
 
-        # Supprimer les relations existantes pour cette recette dans RecipeIngredient
-        RecipeIngredient.query.filter_by(recipe_id=recipe.id).delete()
+        # Supprimer les relations existantes pour cette recette uniquement si de nouveaux ingrédients sont fournis
+        if ingredients:
+            RecipeIngredient.query.filter_by(recipe_id=recipe.id).delete()
 
-        # Ajouter de nouvelles relations avec les ingrédients
-        for ingredient_data in ingredients:
-            ingredient_name = ingredient_data['name']
-            ingredient = Ingredient.query.filter_by(name_ingredient=ingredient_name).first()
-            if not ingredient:
-                # Si l'ingrédient n'existe pas, on le crée
-                ingredient = Ingredient(name_ingredient=ingredient_name)
-                db.session.add(ingredient)
-                db.session.flush()
+            # Ajouter de nouvelles relations avec les ingrédients
+            for ingredient_data in ingredients:
+                ingredient_name = ingredient_data['name']
+                ingredient = Ingredient.query.filter_by(name_ingredient=ingredient_name).first()
+                if not ingredient:
+                    # Si l'ingrédient n'existe pas, on le crée
+                    ingredient = Ingredient(name_ingredient=ingredient_name)
+                    db.session.add(ingredient)
+                    db.session.flush()
 
-            new_recipe_ingredient = RecipeIngredient(
-                recipe_id=recipe.id,
-                ingredient_id=ingredient.id,
-                quantity=ingredient_data['quantity'],
-                unit=ingredient_data['unit']
-            )
-            db.session.add(new_recipe_ingredient)
+                new_recipe_ingredient = RecipeIngredient(
+                    recipe_id=recipe.id,
+                    ingredient_id=ingredient.id,
+                    quantity=ingredient_data['quantity'],
+                    unit=ingredient_data['unit']
+                )
+                db.session.add(new_recipe_ingredient)
 
         db.session.commit()
         return redirect(url_for('recipes.view_recipe', id=id))
@@ -132,8 +153,6 @@ def edit_recipe(id):
     # Récupérer les ingrédients avec leurs IDs
     ingredients = RecipeIngredient.query.filter_by(recipe_id=recipe.id).all()
     return render_template('recipes/edit_recipe.html', recipe=recipe, ingredients=ingredients)
-
-
 
 @recipes.route('/edit_ingredient/<int:recipe_id>/<int:ingredient_id>', methods=['POST'])
 def edit_ingredient(recipe_id, ingredient_id):
@@ -269,3 +288,16 @@ def edit_comment(comment_id):
         return jsonify({"message": "Comment updated"}), 200
     else:
         return jsonify({"error": "Comment not found"}), 404
+    
+
+@recipes.route('/get_ingredients/<int:recipe_id>', methods=['GET'])
+def get_ingredients(recipe_id):
+        recipe = Recipe.query.get_or_404(recipe_id)
+        ingredients = [{
+        'id': ri.ingredient.id,
+        'name': ri.ingredient.name_ingredient,
+        'quantity': ri.quantity,
+        'unit': ri.unit
+        } for ri in recipe.ingredients]
+    
+        return jsonify(ingredients), 200
