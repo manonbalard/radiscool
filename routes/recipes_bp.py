@@ -16,7 +16,7 @@ def index():
     all_recipes = Recipe.query.all()
     return render_template('recipes/recipes.html', recipes=all_recipes)
 
-@recipes.route("/addrecipe", methods=['GET'])
+@recipes.route('/addrecipe', methods=['GET'])
 def addrecipe():
     return render_template('recipes/add_recipe.html')
 
@@ -67,12 +67,12 @@ def addrecipe_with_ingredients():
     return jsonify({'redirect': url_for('recipes.view_recipe', id=new_recipe.id)})
 
 
-@recipes.route('/recipes/<int:id>')
+@recipes.route('/<int:id>')
 def view_recipe(id):
     recipe = Recipe.query.get_or_404(id)
     return render_template('recipes/view_recipe.html', recipe=recipe)
 
-@recipes.route('/recipes/delete/<int:id>', methods=['POST'])
+@recipes.route('/delete/<int:id>', methods=['POST'])
 def delete_recipe(id):
     recipe = Recipe.query.get_or_404(id)
 
@@ -88,7 +88,7 @@ def delete_recipe(id):
 
 
 
-@recipes.route('/recipes/edit/<int:id>', methods=['GET', 'POST'])
+@recipes.route('/edit/<int:id>', methods=['GET', 'POST'])
 def edit_recipe(id):
     recipe = Recipe.query.get_or_404(id)
 
@@ -100,7 +100,6 @@ def edit_recipe(id):
         if ingredients is not None:
             ingredients = json.loads(ingredients)  # Convert JSON string to list
         else:
-            # Gérer le cas où 'ingredients' est absent, par exemple en levant une erreur ou en renvoyant un message
             return "Ingredients are required", 400
 
         recipe.title = title
@@ -119,7 +118,6 @@ def edit_recipe(id):
                 db.session.add(ingredient)
                 db.session.flush()
 
-            # Ajouter la relation dans la table RecipeIngredient
             new_recipe_ingredient = RecipeIngredient(
                 recipe_id=recipe.id,
                 ingredient_id=ingredient.id,
@@ -131,15 +129,19 @@ def edit_recipe(id):
         db.session.commit()
         return redirect(url_for('recipes.view_recipe', id=id))
 
-    ingredients = recipe.ingredients
+    # Récupérer les ingrédients avec leurs IDs
+    ingredients = RecipeIngredient.query.filter_by(recipe_id=recipe.id).all()
     return render_template('recipes/edit_recipe.html', recipe=recipe, ingredients=ingredients)
 
 
 
-@recipes.route('/recipes/edit_ingredient/<int:recipe_id>/<int:ingredient_id>', methods=['POST'])
+@recipes.route('/edit_ingredient/<int:recipe_id>/<int:ingredient_id>', methods=['POST'])
 def edit_ingredient(recipe_id, ingredient_id):
     # Récupérer la relation RecipeIngredient existante
-    recipe_ingredient = RecipeIngredient.query.filter_by(recipe_id=recipe_id, ingredient_id=ingredient_id).first_or_404()
+    recipe_ingredient = RecipeIngredient.query.filter_by(recipe_id=recipe_id, ingredient_id=ingredient_id).first()
+    if recipe_ingredient is None:
+        print(f"RecipeIngredient not found for recipe_id={recipe_id} and ingredient_id={ingredient_id}")
+        return jsonify({'message': 'Ingredient not found'}), 404
 
     # Récupérer les nouvelles données du formulaire ou de la requête JSON
     data = request.get_json()
@@ -158,37 +160,62 @@ def edit_ingredient(recipe_id, ingredient_id):
 
 
 
-@recipes.route('/recipes/add_ingredient/<int:recipe_id>', methods=['POST'])
+@recipes.route('/add_ingredient/<int:recipe_id>', methods=['POST'])
 def add_ingredient(recipe_id):
-    recipe = Recipe.query.get_or_404(recipe_id)
-    
-    # Récupérer les données du formulaire
-    name_ingredient = request.form.get('name_ingredient')
-    quantity = request.form.get('quantity')
-    unit = request.form.get('unit')
+    try:
+        recipe = Recipe.query.get_or_404(recipe_id)
 
-    # Trouver ou créer l'ingrédient
-    ingredient = Ingredient.query.filter_by(name_ingredient=name_ingredient).first()
-    if not ingredient:
-        ingredient = Ingredient(name_ingredient=name_ingredient)
-        db.session.add(ingredient)
-        db.session.flush()
+        # Récupérer les données du formulaire
+        name_ingredient = request.form.get('name_ingredient')
+        quantity = request.form.get('quantity')
+        unit = request.form.get('unit')
 
-    # Ajouter la relation dans la table RecipeIngredient
-    new_recipe_ingredient = RecipeIngredient(
-        recipe_id=recipe.id,
-        ingredient_id=ingredient.id,
-        quantity=quantity,
-        unit=unit
-    )
-    db.session.add(new_recipe_ingredient)
-    db.session.commit()
+        # Validation des données
+        if not name_ingredient or not quantity or not unit:
+            return jsonify({'error': 'All fields are required'}), 400
 
-    # Retourner les détails du nouvel ingrédient
-    return jsonify({'id': ingredient.id, 'name_ingredient': ingredient.name_ingredient, 'quantity': quantity, 'unit': unit}), 200
+        # Trouver ou créer l'ingrédient
+        ingredient = Ingredient.query.filter_by(name_ingredient=name_ingredient).first()
+        if not ingredient:
+            ingredient = Ingredient(name_ingredient=name_ingredient)
+            db.session.add(ingredient)
+            db.session.flush()
+
+        # Vérifier si la relation existe déjà dans RecipeIngredient
+        existing_recipe_ingredient = RecipeIngredient.query.filter_by(
+            recipe_id=recipe.id,
+            ingredient_id=ingredient.id
+        ).first()
+
+        if existing_recipe_ingredient:
+            # Si la relation existe, mettez à jour la quantité et l'unité
+            existing_recipe_ingredient.quantity = float(quantity)
+            existing_recipe_ingredient.unit = unit
+        else:
+            # Si la relation n'existe pas, créez-la
+            new_recipe_ingredient = RecipeIngredient(
+                recipe_id=recipe.id,
+                ingredient_id=ingredient.id,
+                quantity=float(quantity),
+                unit=unit
+            )
+            db.session.add(new_recipe_ingredient)
+
+        db.session.commit()
+
+        return jsonify({
+                'id': ingredient.id,
+                'name_ingredient': ingredient.name_ingredient,
+                'quantity': quantity,
+                'unit': unit,
+                'message': 'Ingrédient ajouté avec succès !'
+            }), 200
+    except Exception as e:
+        print("Error:", str(e))  # Log the error message
+        return jsonify({'error': 'An error occurred'}), 500
 
 
-@recipes.route('/recipes/<int:recipe_id>/add_comment', methods=['POST'])
+@recipes.route('/<int:recipe_id>/add_comment', methods=['POST'])
 def add_comment(recipe_id):
     recipe = Recipe.query.get_or_404(recipe_id)
     text = request.form.get('comment')
@@ -202,7 +229,7 @@ def add_comment(recipe_id):
     
     return jsonify({"message": "Comment added"}), 201
 
-@recipes.route('/recipes/<int:recipe_id>/comments', methods=['GET'])
+@recipes.route('/<int:recipe_id>/comments', methods=['GET'])
 def get_comments(recipe_id):
     recipe = Recipe.query.get_or_404(recipe_id)
     
