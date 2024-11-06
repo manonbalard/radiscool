@@ -1,4 +1,4 @@
-from extensions import db
+from extensions import db, mongo_db
 from flask_login import UserMixin
 
 class RecipeIngredient(db.Model):
@@ -23,6 +23,18 @@ class Recipe(db.Model):
     image = db.Column(db.String(256))  
 
     ingredients = db.relationship('RecipeIngredient', back_populates='recipe')
+
+    # Méthode pour récupérer les commentaires associés
+    def get_comments(self):
+        # Récupère les commentaires pour cette recette depuis MongoDB
+        recipe_comments = mongo_db.comments.find({"recipe_id": self.id})
+        # Ajouter le username de l'utilisateur pour chaque commentaire
+        comments_with_usernames = []
+        for comment in recipe_comments:
+            user = User.query.get(comment["user_id"])
+            comment["username"] = user.username if user else "Utilisateur inconnu"
+            comments_with_usernames.append(comment)
+        return comments_with_usernames
 
 class Ingredient(db.Model):
     __tablename__ = 'ingredient'  

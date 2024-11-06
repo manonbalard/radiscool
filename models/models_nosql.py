@@ -9,6 +9,7 @@ class CommentNoSQL:
         self.text = text
         self.date = datetime.utcnow()
 
+
     def save(self):
         comment_data = {
             "recipe_id": self.recipe_id,

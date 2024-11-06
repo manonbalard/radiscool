@@ -19,6 +19,7 @@ app.config.from_object(Config)
 migrate.init_app(app, db)
 login_manager.init_app(app)
 
+
 # Configure extensions
 configure_extensions(app)
 

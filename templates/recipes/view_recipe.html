@@ -36,6 +36,43 @@
         </div>
     </div>
 
+    <!-- Comments Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h2>Commentaires</h2>
+        <div class="comments-list">
+            {% for comment in comments %}
+                <div class="comment-item border-bottom pb-2 mb-2">
+                    <p><strong>{{ comment.username }}:</strong> {{ comment.text }} <br>
+                    <small class="text-muted">{{ comment.date.strftime('%Y-%m-%d %H:%M:%S') }}</small></p>
+                    {% if current_user.id == comment.user_id %}
+                    <div class="d-flex justify-content-between">
+                        <button class="btn btn-sm btn-link text-primary" onclick="editComment('{{ comment._id }}', '{{ comment.text }}')">Modifier</button>
+                        <form action="{{ url_for('recipes.delete_comment', comment_id=comment._id) }}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-link text-danger" onclick="return confirm('Supprimer ce commentaire ?');">Supprimer</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <p>Pas encore de commentaire pour cette recette.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+
+
+            <!-- Add new comment form -->
+            <h3>Ajouter un commentaire</h3>
+            <form action="{{ url_for('recipes.add_comment', recipe_id=recipe.id) }}" method="POST">
+                <div class="form-group">
+                    <textarea class="form-control" name="comment" placeholder="Ajouter un commentaire" rows="3" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Envoyer</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Buttons -->
     <div class="row">
         <div class="col-12">

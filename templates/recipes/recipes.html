@@ -29,22 +29,24 @@
                         <h6>Commentaires :</h6>
                         <div class="comments-list">
                             {% for comment in recipe.comments %}
-                            <div class="comment-item border-bottom pb-2 mb-2">
-                                <p><strong>{{ comment.user.username }}:</strong> {{ comment.text }} <br>
-                                <small class="text-muted">{{ comment.date.strftime('%Y-%m-%d %H:%M:%S') }}</small></p>
-                                {% if current_user.id == comment.user_id %}
-                                <div class="d-flex justify-content-between">
-                                    <button class="btn btn-sm btn-link text-primary" onclick="editComment('{{ comment._id }}', '{{ comment.text }}')">Modifier</button>
-                                    <form action="{{ url_for('recipes.delete_comment', id=comment._id) }}" method="post" class="d-inline">
-                                        <button type="submit" class="btn btn-sm btn-link text-danger" onclick="return confirm('Supprimer ce commentaire ?');">Supprimer</button>
-                                    </form>
+                                <div class="comment-item border-bottom pb-2 mb-2">
+                                    <p><strong>{{ comment.username }}:</strong> {{ comment.text }} <br>
+                                    <small class="text-muted">{{ comment.date.strftime('%Y-%m-%d %H:%M:%S') }}</small></p>
+                                    {% if current_user.id == comment.user_id %}
+                                    <div class="d-flex justify-content-between">
+                                        <button class="btn btn-sm btn-link text-primary" onclick="editComment('{{ comment._id }}', '{{ comment.text }}')">Modifier</button>
+                                        <form action="{{ url_for('recipes.delete_comment', comment_id=comment._id) }}" method="post" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-link text-danger" onclick="return confirm('Supprimer ce commentaire ?');">Supprimer</button>
+                                        </form>
+                                    </div>
+                                    {% endif %}
                                 </div>
-                                {% endif %}
-                            </div>
                             {% else %}
-                            <p>Pas encore de commentaire pour cette recette.</p>
-                            {% endfor %}
+                                <p>Pas encore de commentaire pour cette recette.</p>
+                            {% endfor %}>
+                            
                         </div>
+                        
     
                         <!-- Formulaire pour ajouter un nouveau commentaire -->
                         <form action="{{ url_for('recipes.add_comment', recipe_id=recipe.id) }}" method="POST" class="mt-3">

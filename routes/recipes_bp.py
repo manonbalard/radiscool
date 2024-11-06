@@ -1,20 +1,15 @@
 from flask import current_app, render_template, request, redirect, url_for, Blueprint, flash, jsonify
 from flask_login import login_required, current_user
-from models.models_sql import Ingredient, Recipe, RecipeIngredient
+from models.models_sql import Ingredient, Recipe, RecipeIngredient, User
 from models.models_nosql import CommentNoSQL
 from werkzeug.utils import secure_filename
-from extensions import db, photos  
+from extensions import db, photos, mongo_db
 import os, json
 
 recipes = Blueprint('recipes', __name__)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
-
-@recipes.route("/")
-def index():
-    all_recipes = Recipe.query.all()
-    return render_template('recipes/recipes.html', recipes=all_recipes)
 
 @recipes.route('/addrecipe', methods=['GET'])
 def addrecipe():
@@ -67,10 +62,15 @@ def addrecipe_with_ingredients():
     return jsonify({'redirect': url_for('recipes.view_recipe', id=new_recipe.id)})
 
 
-@recipes.route('/<int:id>')
+@recipes.route('/recipes/<int:id>', methods=['GET'])
 def view_recipe(id):
     recipe = Recipe.query.get_or_404(id)
-    return render_template('recipes/view_recipe.html', recipe=recipe)
+    
+    # Récupérer les commentaires avec les noms d'utilisateurs
+    comments = recipe.get_comments()
+
+    return render_template('recipes/view_recipe.html', recipe=recipe, comments=comments)
+
 
 @recipes.route('/delete/<int:id>', methods=['POST'])
 def delete_recipe(id):
@@ -232,63 +232,7 @@ def add_ingredient(recipe_id):
     except Exception as e:
         print("Error:", str(e))  # Log the error message
         return jsonify({'error': 'An error occurred'}), 500
-
-
-@recipes.route('/<int:recipe_id>/add_comment', methods=['POST'])
-def add_comment(recipe_id):
-    recipe = Recipe.query.get_or_404(recipe_id)
-    text = request.form.get('comment')
-    
-    if not text:
-        return jsonify({"error": "Comment cannot be empty"}), 400
-
-    # Créer un nouveau commentaire et le sauvegarder dans MongoDB
-    new_comment = CommentNoSQL(recipe_id=recipe.id, user_id=current_user.id, text=text)
-    new_comment.save()
-    
-    return jsonify({"message": "Comment added"}), 201
-
-@recipes.route('/<int:recipe_id>/comments', methods=['GET'])
-def get_comments(recipe_id):
-    recipe = Recipe.query.get_or_404(recipe_id)
-    
-    # Récupérer les commentaires depuis MongoDB
-    comments = CommentNoSQL.get_comments_by_recipe(recipe_id)
-    
-    comments_data = []
-    for comment in comments:
-        comments_data.append({
-            "user_id": comment['user_id'],
-            "text": comment['text'],
-            "date": comment['date']
-        })
-    
-    return jsonify(comments_data), 200
-
-@recipes.route('/comments/delete/<comment_id>', methods=['POST'])
-def delete_comment(comment_id):
-    result = CommentNoSQL.delete_comment(comment_id)
-    
-    if result.deleted_count == 1:
-        return jsonify({"message": "Comment deleted"}), 200
-    else:
-        return jsonify({"error": "Comment not found"}), 404
-
-
-@recipes.route('/comments/edit/<comment_id>', methods=['POST'])
-def edit_comment(comment_id):
-    new_text = request.form.get('comment')
-    
-    if not new_text:
-        return jsonify({"error": "Comment cannot be empty"}), 400
-
-    result = CommentNoSQL.update_comment(comment_id, new_text)
-    
-    if result.modified_count == 1:
-        return jsonify({"message": "Comment updated"}), 200
-    else:
-        return jsonify({"error": "Comment not found"}), 404
-    
+  
 
 @recipes.route('/get_ingredients/<int:recipe_id>', methods=['GET'])
 def get_ingredients(recipe_id):
@@ -301,3 +245,53 @@ def get_ingredients(recipe_id):
         } for ri in recipe.ingredients]
     
         return jsonify(ingredients), 200
+
+@recipes.route("/")
+def index():
+    all_recipes = Recipe.query.all()
+    recipes_with_comments = [
+        {
+            "id": recipe.id,
+            "title": recipe.title,
+            "comments": recipe.get_comments()
+        }
+        for recipe in all_recipes
+    ]
+    return render_template('recipes/recipes.html', recipes=recipes_with_comments)
+
+@recipes.route('/<int:recipe_id>/add_comment', methods=['POST'])
+def add_comment(recipe_id):
+    recipe = Recipe.query.get_or_404(recipe_id)
+    text = request.form.get('comment')
+
+    if not text:
+        return jsonify({"error": "Comment cannot be empty"}), 400
+
+    # Créer un nouveau commentaire et le sauvegarder dans MongoDB
+    new_comment = CommentNoSQL(recipe_id=recipe.id, user_id=current_user.id, text=text)
+    new_comment.save()
+
+    return jsonify({"message": "Comment added"}), 201
+
+@recipes.route('/comments/delete/<comment_id>', methods=['POST'])
+def delete_comment(comment_id):
+    result = CommentNoSQL.delete_comment(comment_id)
+
+    if result.deleted_count == 1:
+        return jsonify({"message": "Comment deleted"}), 200
+    else:
+        return jsonify({"error": "Comment not found"}), 404
+
+@recipes.route('/comments/edit/<comment_id>', methods=['POST'])
+def edit_comment(comment_id):
+    new_text = request.form.get('comment')
+
+    if not new_text:
+        return jsonify({"error": "Comment cannot be empty"}), 400
+
+    result = CommentNoSQL.update_comment(comment_id, new_text)
+
+    if result.modified_count == 1:
+        return jsonify({"message": "Comment updated"}), 200
+    else:
+        return jsonify({"error": "Comment not found"}), 404
