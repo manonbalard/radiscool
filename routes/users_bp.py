@@ -53,7 +53,8 @@ def signup_post():
         return redirect(url_for('users.signup'))
     
     # Hachage du mot de passe
-    hashed_password = generate_password_hash(password)
+    hashed_password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16)
+
     
     # Création du nouvel utilisateur
     new_user = User(email=email, username=username, password=hashed_password)

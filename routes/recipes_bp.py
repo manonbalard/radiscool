@@ -5,11 +5,20 @@ from models.models_nosql import CommentNoSQL
 from werkzeug.utils import secure_filename
 from extensions import db, photos, mongo_db
 import os, json
+import imghdr
 
 recipes = Blueprint('recipes', __name__)
 
 def allowed_file(filename):
+    """Vérifie si l'extension du fichier est autorisée."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
+
+def validate_image(file):
+    """Valide si le fichier est réellement une image en vérifiant son type MIME."""
+    if not file:
+        return False
+    file_type = imghdr.what(file)
+    return file_type in current_app.config['ALLOWED_EXTENSIONS']
 
 @recipes.route('/addrecipe', methods=['GET'])
 def addrecipe():
