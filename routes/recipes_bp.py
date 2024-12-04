@@ -1,24 +1,15 @@
-from flask import current_app, render_template, request, redirect, url_for, Blueprint, flash, jsonify
+from flask import current_app, render_template, request, redirect, url_for, flash, jsonify, Blueprint
 from flask_login import login_required, current_user
+from werkzeug.utils import secure_filename
 from models.models_sql import Ingredient, Recipe, RecipeIngredient, User
 from models.models_nosql import CommentNoSQL
-from werkzeug.utils import secure_filename
-from extensions import db, photos, mongo_db
+from services.recipe_service import add_recipe, get_recipe_with_comments, delete_recipe, edit_recipe, allowed_file, validate_image
+from services.ingredient_service import add_ingredient_to_recipe, delete_ingredient, update_ingredient
+from services.comment_service import add_comment, delete_comment, update_comment
+from extensions import photos
 import os, json
-import imghdr
 
 recipes = Blueprint('recipes', __name__)
-
-def allowed_file(filename):
-    """Vérifie si l'extension du fichier est autorisée."""
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
-
-def validate_image(file):
-    """Valide si le fichier est réellement une image en vérifiant son type MIME."""
-    if not file:
-        return False
-    file_type = imghdr.what(file)
-    return file_type in current_app.config['ALLOWED_EXTENSIONS']
 
 @recipes.route('/addrecipe', methods=['GET'])
 def addrecipe():
@@ -29,231 +20,117 @@ def addrecipe():
 def addrecipe_with_ingredients():
     title = request.form['title']
     description = request.form['description']
-    ingredients = json.loads(request.form['ingredients'])  # Convertir la chaîne JSON en liste Python
+    ingredients = request.form['ingredients']  # JSON string
+    
+    # Appel au service pour ajouter une recette
+    result = add_recipe(title, description, ingredients, current_user.id, request.files.get('recipeImage'))
+    
+    if result['error']:
+        flash(result['message'], 'danger')
+        return redirect(url_for('recipes.addrecipe'))
 
-    # Créer un objet Recipe
-    new_recipe = Recipe(title=title, description=description, user_id=current_user.id)
-
-    # Gestion du téléchargement de fichier
-    if 'recipeImage' in request.files:
-        file = request.files['recipeImage']
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file_path = photos.save(file, name=filename)
-            new_recipe.image = 'uploads/images/' + filename
-
-    # Ajouter la recette à la session
-    db.session.add(new_recipe)
-    db.session.flush()  # Flush pour obtenir l'ID de la recette
-
-    # Ajouter les ingrédients via la table intermédiaire
-    for ingredient_data in ingredients:
-        ingredient_name = ingredient_data['name']
-        ingredient = Ingredient.query.filter_by(name_ingredient=ingredient_name).first()
-
-        if not ingredient:
-            # Si l'ingrédient n'existe pas, on le crée
-            ingredient = Ingredient(name_ingredient=ingredient_name)
-            db.session.add(ingredient)
-            db.session.flush()  # Flush pour obtenir l'ID de l'ingrédient
-
-        # Ajouter la relation entre recette et ingrédient dans la table RecipeIngredient
-        new_recipe_ingredient = RecipeIngredient(
-            recipe_id=new_recipe.id,
-            ingredient_id=ingredient.id,
-            quantity=ingredient_data['quantity'],
-            unit=ingredient_data['unit']
-        )
-        db.session.add(new_recipe_ingredient)
-
-    db.session.commit()
-
-    return jsonify({'redirect': url_for('recipes.view_recipe', id=new_recipe.id)})
+    return jsonify({'redirect': url_for('recipes.view_recipe', id=result['recipe_id'])})
 
 
 @recipes.route('/recipes/<int:id>', methods=['GET'])
-def view_recipe(id):
-    recipe = Recipe.query.get_or_404(id)
+def view_recipe_route(id):
+    # Appel au service pour obtenir la recette et les commentaires
+    result = get_recipe_with_comments(id)
     
-    # Récupérer les commentaires avec les noms d'utilisateurs
-    comments = recipe.get_comments()
-
-    return render_template('recipes/view_recipe.html', recipe=recipe, comments=comments)
-
+    if result['error']:
+        flash(result['message'], 'danger')
+        return redirect(url_for('recipes.index'))
+    
+    return render_template('recipes/view_recipe.html', recipe=result['recipe'], comments=result['comments'])
 
 @recipes.route('/delete/<int:id>', methods=['POST'])
-def delete_recipe(id):
-    recipe = Recipe.query.get_or_404(id)
-
-    # Supprimer les entrées dans la table intermédiaire RecipeIngredient
-    RecipeIngredient.query.filter_by(recipe_id=recipe.id).delete()
-
-    # Supprimer la recette
-    db.session.delete(recipe)
-    db.session.commit()
-
-    flash('Recipe deleted.')
+@login_required
+def delete_recipe_route(id):
+    result = delete_recipe(id)
+    
+    if result['error']:
+        flash(result['message'], 'danger')
+    else:
+        flash(result['message'], 'success')
+    
     return redirect(url_for('recipes.index'))
 
 @recipes.route('/delete_ingredient/<int:recipe_id>/<int:ingredient_id>', methods=['POST'])
-def delete_ingredient(recipe_id, ingredient_id):
-    # Trouve la relation entre la recette et l'ingrédient dans RecipeIngredient
-    recipe_ingredient = RecipeIngredient.query.filter_by(recipe_id=recipe_id, ingredient_id=ingredient_id).first_or_404()
+@login_required
+def delete_ingredient_route(recipe_id, ingredient_id):
+    result = delete_ingredient(recipe_id, ingredient_id)
+    
+    return jsonify({'message': result['message']}), 200 if not result['error'] else 400
 
-    # Supprime la relation
-    db.session.delete(recipe_ingredient)
-    db.session.commit()
-
-    return jsonify({'message': 'Ingrédient supprimé avec succès'}), 200
-
-
-@recipes.route('/edit/<int:id>', methods=['GET', 'POST'])
-def edit_recipe(id):
-    recipe = Recipe.query.get_or_404(id)
-
+@recipes.route('/edit_recipe/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_recipe_route(id):
     if request.method == 'POST':
-        # Mise à jour des informations de la recette
-        title = request.form.get('title')
-        description = request.form.get('description')
-        ingredients = request.form.get('ingredients', None)
-
-        # Convertir JSON string to list si des ingrédients sont fournis
-        if ingredients is not None:
-            ingredients = json.loads(ingredients)  # Convert JSON string to list
-        else:
-            ingredients = []  # Initialise comme une liste vide si pas d'ingrédients fournis
-
-        # Vérifier les ingrédients existants
-        existing_ingredients = RecipeIngredient.query.filter_by(recipe_id=recipe.id).all()
-
-        # Si aucune nouvelle liste d'ingrédients n'est fournie, on renvoie une erreur
-        if not ingredients and not existing_ingredients:
-            return "At least one ingredient is required", 400
-
-        # Mise à jour des informations de la recette
-        recipe.title = title
-        recipe.description = description
-
-        # Supprimer les relations existantes pour cette recette uniquement si de nouveaux ingrédients sont fournis
-        if ingredients:
-            RecipeIngredient.query.filter_by(recipe_id=recipe.id).delete()
-
-            # Ajouter de nouvelles relations avec les ingrédients
-            for ingredient_data in ingredients:
-                ingredient_name = ingredient_data['name']
-                ingredient = Ingredient.query.filter_by(name_ingredient=ingredient_name).first()
-                if not ingredient:
-                    # Si l'ingrédient n'existe pas, on le crée
-                    ingredient = Ingredient(name_ingredient=ingredient_name)
-                    db.session.add(ingredient)
-                    db.session.flush()
-
-                new_recipe_ingredient = RecipeIngredient(
-                    recipe_id=recipe.id,
-                    ingredient_id=ingredient.id,
-                    quantity=ingredient_data['quantity'],
-                    unit=ingredient_data['unit']
-                )
-                db.session.add(new_recipe_ingredient)
-
-        db.session.commit()
+        # Récupération des données du formulaire
+        title = request.form['title']
+        description = request.form['description']
+        ingredients = request.form['ingredients']
+        
+        # Appel au service pour éditer la recette
+        result = edit_recipe(id, title, description, ingredients)
+        
+        if result['error']:
+            flash(result['message'], 'danger')
+            return redirect(url_for('recipes.edit_recipe_route', id=id))
+        
         return redirect(url_for('recipes.view_recipe', id=id))
+    
+    # Route GET : afficher la recette à éditer
+    recipe = Recipe.query.get(id)  # Récupère la recette depuis la base de données
+    if not recipe:
+        flash("La recette demandée est introuvable.", "danger")
+        return redirect(url_for('recipes.list_recipes'))  # Redirige vers une liste ou une autre page appropriée
+    
+    return render_template('recipes/edit_recipe.html', recipe=recipe)
 
-    # Récupérer les ingrédients avec leurs IDs
-    ingredients = RecipeIngredient.query.filter_by(recipe_id=recipe.id).all()
-    return render_template('recipes/edit_recipe.html', recipe=recipe, ingredients=ingredients)
 
 @recipes.route('/edit_ingredient/<int:recipe_id>/<int:ingredient_id>', methods=['POST'])
-def edit_ingredient(recipe_id, ingredient_id):
-    # Récupérer la relation RecipeIngredient existante
-    recipe_ingredient = RecipeIngredient.query.filter_by(recipe_id=recipe_id, ingredient_id=ingredient_id).first()
-    if recipe_ingredient is None:
-        print(f"RecipeIngredient not found for recipe_id={recipe_id} and ingredient_id={ingredient_id}")
-        return jsonify({'message': 'Ingredient not found'}), 404
-
-    # Récupérer les nouvelles données du formulaire ou de la requête JSON
+@login_required
+def edit_ingredient_route(recipe_id, ingredient_id):
     data = request.get_json()
     quantity = data.get('quantity')
     unit = data.get('unit')
 
-    # Mise à jour des quantités et unités si disponibles
-    if quantity is not None:
-        recipe_ingredient.quantity = quantity
-    if unit is not None:
-        recipe_ingredient.unit = unit
-
-    db.session.commit()
-
-    return jsonify({'message': 'Ingredient updated successfully'}), 200
-
-
+    result = update_ingredient(recipe_id, ingredient_id, quantity, unit)
+    
+    return jsonify({'message': result['message']}), 200 if not result['error'] else 400
 
 @recipes.route('/add_ingredient/<int:recipe_id>', methods=['POST'])
-def add_ingredient(recipe_id):
-    try:
-        recipe = Recipe.query.get_or_404(recipe_id)
+@login_required
+def add_ingredient_route(recipe_id):
+    name_ingredient = request.form.get('name_ingredient')
+    quantity = request.form.get('quantity')
+    unit = request.form.get('unit')
 
-        # Récupérer les données du formulaire
-        name_ingredient = request.form.get('name_ingredient')
-        quantity = request.form.get('quantity')
-        unit = request.form.get('unit')
+    # Appel au service pour ajouter un ingrédient
+    result = add_ingredient_to_recipe(recipe_id, name_ingredient, quantity, unit)
 
-        # Validation des données
-        if not name_ingredient or not quantity or not unit:
-            return jsonify({'error': 'All fields are required'}), 400
-
-        # Trouver ou créer l'ingrédient
-        ingredient = Ingredient.query.filter_by(name_ingredient=name_ingredient).first()
-        if not ingredient:
-            ingredient = Ingredient(name_ingredient=name_ingredient)
-            db.session.add(ingredient)
-            db.session.flush()
-
-        # Vérifier si la relation existe déjà dans RecipeIngredient
-        existing_recipe_ingredient = RecipeIngredient.query.filter_by(
-            recipe_id=recipe.id,
-            ingredient_id=ingredient.id
-        ).first()
-
-        if existing_recipe_ingredient:
-            # Si la relation existe, mettez à jour la quantité et l'unité
-            existing_recipe_ingredient.quantity = float(quantity)
-            existing_recipe_ingredient.unit = unit
-        else:
-            # Si la relation n'existe pas, créez-la
-            new_recipe_ingredient = RecipeIngredient(
-                recipe_id=recipe.id,
-                ingredient_id=ingredient.id,
-                quantity=float(quantity),
-                unit=unit
-            )
-            db.session.add(new_recipe_ingredient)
-
-        db.session.commit()
-
-        return jsonify({
-                'id': ingredient.id,
-                'name_ingredient': ingredient.name_ingredient,
-                'quantity': quantity,
-                'unit': unit,
-                'message': 'Ingrédient ajouté avec succès !'
-            }), 200
-    except Exception as e:
-        print("Error:", str(e))  # Log the error message
-        return jsonify({'error': 'An error occurred'}), 500
-  
+    if result['error']:
+        return jsonify({'error': result['message']}), 400
+    return jsonify({
+        'id': result['ingredient_id'],
+        'name_ingredient': name_ingredient,
+        'quantity': quantity,
+        'unit': unit,
+        'message': result['message']
+    }), 200
 
 @recipes.route('/get_ingredients/<int:recipe_id>', methods=['GET'])
 def get_ingredients(recipe_id):
-        recipe = Recipe.query.get_or_404(recipe_id)
-        ingredients = [{
+    recipe = Recipe.query.get_or_404(recipe_id)
+    ingredients = [{
         'id': ri.ingredient.id,
         'name': ri.ingredient.name_ingredient,
         'quantity': ri.quantity,
         'unit': ri.unit
-        } for ri in recipe.ingredients]
-    
-        return jsonify(ingredients), 200
+    } for ri in recipe.ingredients]
+
+    return jsonify(ingredients), 200
 
 @recipes.route("/")
 def index():
@@ -269,38 +146,40 @@ def index():
     return render_template('recipes/recipes.html', recipes=recipes_with_comments)
 
 @recipes.route('/<int:recipe_id>/add_comment', methods=['POST'])
-def add_comment(recipe_id):
-    recipe = Recipe.query.get_or_404(recipe_id)
+@login_required
+def add_comment_route(recipe_id):
     text = request.form.get('comment')
 
     if not text:
         return jsonify({"error": "Comment cannot be empty"}), 400
 
-    # Créer un nouveau commentaire et le sauvegarder dans MongoDB
-    new_comment = CommentNoSQL(recipe_id=recipe.id, user_id=current_user.id, text=text)
-    new_comment.save()
+    # Appel au service pour ajouter un commentaire
+    result = add_comment(recipe_id, current_user.id, text)
 
-    return jsonify({"message": "Comment added"}), 201
+    if result['error']:
+        return jsonify({"error": result['message']}), 400
+    return jsonify({"message": result['message']}), 201
 
 @recipes.route('/comments/delete/<comment_id>', methods=['POST'])
-def delete_comment(comment_id):
-    result = CommentNoSQL.delete_comment(comment_id)
+@login_required
+def delete_comment_route(comment_id):
+    result = delete_comment(comment_id)
 
-    if result.deleted_count == 1:
-        return jsonify({"message": "Comment deleted"}), 200
-    else:
-        return jsonify({"error": "Comment not found"}), 404
+    if result['error']:
+        return jsonify({"error": result['message']}), 400
+    return jsonify({"message": result['message']}), 200
 
 @recipes.route('/comments/edit/<comment_id>', methods=['POST'])
-def edit_comment(comment_id):
+@login_required
+def edit_comment_route(comment_id):
     new_text = request.form.get('comment')
 
     if not new_text:
         return jsonify({"error": "Comment cannot be empty"}), 400
 
-    result = CommentNoSQL.update_comment(comment_id, new_text)
+    # Appel au service pour éditer un commentaire
+    result = update_comment(comment_id, new_text)
 
-    if result.modified_count == 1:
-        return jsonify({"message": "Comment updated"}), 200
-    else:
-        return jsonify({"error": "Comment not found"}), 404
+    if result['error']:
+        return jsonify({"error": result['message']}), 400
+    return jsonify({"message": result['message']}), 200

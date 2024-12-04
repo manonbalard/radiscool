@@ -14,7 +14,7 @@
     <div class="container">
         <h2>Modifier la recette: {{ recipe.title }}</h2>
         <!-- Main recipe form for updating the recipe's title and description -->
-        <form action="{{ url_for('recipes.edit_recipe', id=recipe.id) }}" method="post" enctype="multipart/form-data">
+        <form action="{{ url_for('recipes.edit_recipe_route', id=recipe.id) }}" method="post" enctype="multipart/form-data">
             <input type="hidden" name="recipe_id" value="{{ recipe.id }}">
             <div class="mb-3">
                 <label for="title" class="form-label">Titre</label>
