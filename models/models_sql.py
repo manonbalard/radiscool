@@ -26,15 +26,21 @@ class Recipe(db.Model):
 
     # Méthode pour récupérer les commentaires associés
     def get_comments(self):
-        # Récupère les commentaires pour cette recette depuis MongoDB
         recipe_comments = mongo_db.comments.find({"recipe_id": self.id})
-        # Ajouter le username de l'utilisateur pour chaque commentaire
         comments_with_usernames = []
         for comment in recipe_comments:
             user = User.query.get(comment["user_id"])
             comment["username"] = user.username if user else "Utilisateur inconnu"
             comments_with_usernames.append(comment)
         return comments_with_usernames
+
+    # Propriété calculée pour la moyenne des notes
+    @property
+    def average_rating(self):
+        ratings = Rating.query.filter_by(recipe_id=self.id).all()
+        if not ratings:
+            return None  # Pas encore de notes
+        return sum(r.stars for r in ratings) / len(ratings)
 
 class Ingredient(db.Model):
     __tablename__ = 'ingredient'  

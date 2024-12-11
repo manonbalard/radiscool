@@ -10,81 +10,159 @@
         <div class="col-md-4 mb-4 d-flex">
             <div class="card flex-fill d-flex flex-column">
                 {% if recipe.image %}
-                <img src="{{ url_for('static', filename=recipe.image) }}" class="card-img-top" alt="Image for {{ recipe.title }}" style="max-width: 100%; height: auto;">
+                <img src="{{ url_for('static', filename=recipe.image) }}" alt="Image of {{ recipe.title }}" style="max-width: 100%; height: auto;">
                 {% else %}
-                <img src="path/to/default-image.jpg" class="card-img-top" alt="Image non disponible" style="max-width: 100%; height: auto;">
+                <p>Aucune image disponible pour cette recette.</p>
                 {% endif %}
                 <div class="card-body">
                     <h5 class="card-title">{{ recipe.title }}</h5>
-                    <div class="d-flex justify-content-between align-items-center">
+
+                    <div class="mb-2">
+                        <span class="text-muted">Note moyenne : </span>
+                        {% if recipe.average_rating is not none %}
+                            {% for star in range(1, 6) %}
+                            <span class="star {% if star <= recipe.average_rating %}text-warning{% else %}text-muted{% endif %}">★</span>
+                            {% endfor %}
+                            <span>({{ recipe.average_rating|round(1) }}/5)</span>
+                        {% else %}
+                            <span class="text-muted">Pas encore notée</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3">
                         <button onclick="location.href='{{ url_for('recipes.view_recipe_route', id=recipe.id) }}'" class="btn btn-link p-0 m-0">Voir</button>
                         <button onclick="location.href='{{ url_for('recipes.edit_recipe_route', id=recipe.id) }}'" class="btn btn-link p-0 m-0">Modifier</button>
                         <form action="{{ url_for('recipes.delete_recipe_route', id=recipe.id) }}" method="post" class="d-inline m-0 p-0">
-                            <button type="submit" class="btn btn-link p-0 m-0" onclick="return confirm('Are you sure?');">Supprimer</button>
+                            <button type="submit" class="btn btn-link p-0 m-0" onclick="return confirm('Êtes-vous sûr ?');">Supprimer</button>
                         </form>
+                    </div>
+
+                    <!-- Section pour noter la recette -->
+                    <form action="{{ url_for('recipes.rate_recipe_route', recipe_id=recipe.id) }}" method="POST">
+                        <div class="rating" data-recipe-id="{{ recipe.id }}">
+                            {% for star in range(1, 6) %}
+                            <input type="radio" id="star-{{ star }}-{{ recipe.id }}" name="stars" value="{{ star }}" class="star-input" {% if recipe.user_rating == star %}checked{% endif %}>
+                            <label for="star-{{ star }}-{{ recipe.id }}" class="star-label">★</label>
+                            {% endfor %}
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm mt-2">Noter</button>
+                    </form>
+
+                                        <!-- Section des commentaires pour cette recette -->
+                                        <div class="mt-3">
+                                            <h6>Commentaires :</h6>
+                                            <div class="comments-list">
+                                                {% for comment in recipe.comments %}
+                                                    <div class="comment-item border-bottom pb-2 mb-2">
+                                                        <p><strong>{{ comment.username }}:</strong> {{ comment.text }} <br>
+                                                        <small class="text-muted">{{ comment.date.strftime('%Y-%m-%d %H:%M:%S') }}</small></p>
+                                                        {% if current_user.id == comment.user_id %}
+                                                        <div class="d-flex justify-content-between">
+                                                            <button class="btn btn-sm btn-link text-primary" onclick="editComment('{{ comment._id }}', '{{ comment.text }}')">Modifier</button>
+                                                            <form action="{{ url_for('recipes.delete_comment_route', comment_id=comment._id) }}" method="post" class="d-inline">
+                                                                <button type="submit" class="btn btn-sm btn-link text-danger" onclick="return confirm('Supprimer ce commentaire ?');">Supprimer</button>
+                                                            </form>
+                                                        </div>
+                                                        {% endif %}
+                                                    </div>
+                                                {% else %}
+                                                    <p>Pas encore de commentaire pour cette recette.</p>
+                                                {% endfor %}>
+                                                
+                                            </div>
+                                            
+                        
+                                            <!-- Formulaire pour ajouter un nouveau commentaire -->
+                                            <form action="{{ url_for('recipes.add_comment_route', recipe_id=recipe.id) }}" method="POST" class="mt-3">
+                                                <div class="form-group">
+                                                    <textarea class="form-control" name="comment" placeholder="Ajouter un commentaire" rows="3" required></textarea>
+                                                </div>
+                                                <button type="submit" class="btn btn-primary btn-sm">Envoyer</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <p>Pas de recette trouvée.</p>
+                            {% endfor %}
+                        </div>
                     </div>
                     
-                    <!-- Section des commentaires pour cette recette -->
-                    <div class="mt-3">
-                        <h6>Commentaires :</h6>
-                        <div class="comments-list">
-                            {% for comment in recipe.comments %}
-                                <div class="comment-item border-bottom pb-2 mb-2">
-                                    <p><strong>{{ comment.username }}:</strong> {{ comment.text }} <br>
-                                    <small class="text-muted">{{ comment.date.strftime('%Y-%m-%d %H:%M:%S') }}</small></p>
-                                    {% if current_user.id == comment.user_id %}
-                                    <div class="d-flex justify-content-between">
-                                        <button class="btn btn-sm btn-link text-primary" onclick="editComment('{{ comment._id }}', '{{ comment.text }}')">Modifier</button>
-                                        <form action="{{ url_for('recipes.delete_comment_route', comment_id=comment._id) }}" method="post" class="d-inline">
-                                            <button type="submit" class="btn btn-sm btn-link text-danger" onclick="return confirm('Supprimer ce commentaire ?');">Supprimer</button>
-                                        </form>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                            {% else %}
-                                <p>Pas encore de commentaire pour cette recette.</p>
-                            {% endfor %}>
-                            
-                        </div>
-                        
-    
-                        <!-- Formulaire pour ajouter un nouveau commentaire -->
-                        <form action="{{ url_for('recipes.add_comment_route', recipe_id=recipe.id) }}" method="POST" class="mt-3">
-                            <div class="form-group">
-                                <textarea class="form-control" name="comment" placeholder="Ajouter un commentaire" rows="3" required></textarea>
-                            </div>
-                            <button type="submit" class="btn btn-primary btn-sm">Envoyer</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% else %}
-        <p>Pas de recette trouvée.</p>
-        {% endfor %}
-    </div>
-</div>
-
 <script>
-    // Script pour gérer la modification d'un commentaire
-    function editComment(commentId, commentText) {
-        const newText = prompt("Modifier votre commentaire :", commentText);
-        if (newText) {
-            fetch(`/recipes/edit_comment/${commentId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ text: newText })
-            }).then(response => {
-                if (response.ok) {
-                    location.reload();
-                } else {
-                    alert('Erreur lors de la mise à jour du commentaire.');
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.rating').forEach(ratingContainer => {
+        const stars = Array.from(ratingContainer.querySelectorAll('.star-label'));
+
+        stars.forEach((star, index) => {
+            // Ajoute l'effet de survol
+            star.addEventListener('mouseover', () => {
+                stars.forEach((s, i) => {
+                    if (i <= index) {
+                        s.classList.add('hovered');
+                    } else {
+                        s.classList.remove('hovered');
+                    }
+                });
+            });
+
+            // Retire l'effet de survol après le survol
+            star.addEventListener('mouseout', () => {
+                stars.forEach(s => s.classList.remove('hovered'));
+            });
+
+            // Clique sur une étoile pour la sélectionner
+            star.addEventListener('click', () => {
+                stars.forEach((s, i) => {
+                    if (i <= index) {
+                        s.classList.add('selected');
+                    } else {
+                        s.classList.remove('selected');
+                    }
+                });
+
+                // Met à jour l'input correspondant
+                const input = ratingContainer.querySelector(`#star-${index + 1}-${ratingContainer.dataset.recipeId}`);
+                if (input) {
+                    input.checked = true;
                 }
             });
-        }
-    }
+        });
+    });
+});
 </script>
+
+<style>
+/* Styles pour les étoiles */
+.rating {
+    display: inline-flex;
+    direction: row-reverse;
+    justify-content: center;
+    font-size: 24px;
+}
+
+/* Masquer les inputs pour les étoiles */
+.star-input {
+    display: none;
+}
+
+/* Style des étoiles non sélectionnées */
+.star-label {
+    font-size: 1.5rem;
+    color: #ccc; /* Couleur des étoiles non sélectionnées */
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+/* Étoiles survolées */
+.star-label.hovered {
+    color: gold; /* Couleur des étoiles survolées */
+}
+
+/* Étoiles sélectionnées */
+.star-label.selected {
+    color: gold; /* Couleur des étoiles sélectionnées */
+}
+</style>
 
 {% endblock %}

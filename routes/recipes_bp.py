@@ -1,13 +1,14 @@
 from flask import current_app, render_template, request, redirect, url_for, flash, jsonify, Blueprint
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-from models.models_sql import Ingredient, Recipe, RecipeIngredient, User
+from models.models_sql import Ingredient, Recipe, RecipeIngredient, User, Rating
 from models.models_nosql import CommentNoSQL
-from services.recipe_service import add_recipe, get_recipe_with_comments, delete_recipe, edit_recipe, allowed_file, validate_image
+from services.recipe_service import add_recipe, get_recipe_with_comments, delete_recipe, edit_recipe, allowed_file, validate_image, rate_recipe
 from services.ingredient_service import add_ingredient_to_recipe, delete_ingredient, update_ingredient
 from services.comment_service import add_comment, delete_comment, update_comment
 from extensions import photos
 import os, json
+
 
 recipes = Blueprint('recipes', __name__)
 
@@ -69,16 +70,18 @@ def edit_recipe_route(id):
         # Récupération des données du formulaire
         title = request.form['title']
         description = request.form['description']
-        ingredients = request.form['ingredients']
+        ingredients = request.form.get('ingredients', '[]')  # Valeur par défaut si aucun ingrédient
+        image_file = request.files.get('recipeImage')  # Récupérer l'image si elle existe
         
         # Appel au service pour éditer la recette
-        result = edit_recipe(id, title, description, ingredients)
+        result = edit_recipe(id, title, description, ingredients, image_file)
         
         if result['error']:
             flash(result['message'], 'danger')
             return redirect(url_for('recipes.edit_recipe_route', id=id))
         
-        return redirect(url_for('recipes.view_recipe', id=id))
+        flash('La recette a été mise à jour avec succès.', 'success')
+        return redirect(url_for('recipes.view_recipe_route', id=id))
     
     # Route GET : afficher la recette à éditer
     recipe = Recipe.query.get(id)  # Récupère la recette depuis la base de données
@@ -86,7 +89,9 @@ def edit_recipe_route(id):
         flash("La recette demandée est introuvable.", "danger")
         return redirect(url_for('recipes.list_recipes'))  # Redirige vers une liste ou une autre page appropriée
     
-    return render_template('recipes/edit_recipe.html', recipe=recipe)
+    ingredients = RecipeIngredient.query.filter_by(recipe_id=recipe.id).all()
+    return render_template('recipes/edit_recipe.html', recipe=recipe, ingredients=ingredients)
+
 
 
 @recipes.route('/edit_ingredient/<int:recipe_id>/<int:ingredient_id>', methods=['POST'])
@@ -135,15 +140,21 @@ def get_ingredients(recipe_id):
 @recipes.route("/")
 def index():
     all_recipes = Recipe.query.all()
-    recipes_with_comments = [
+
+    # Récupérer les évaluations et calculer la moyenne des notes pour chaque recette
+    recipes_with_comments_and_ratings = [
         {
             "id": recipe.id,
             "title": recipe.title,
-            "comments": recipe.get_comments()
+            "image": recipe.image,
+            "average_rating": recipe.average_rating,  # Inclure la moyenne des notes
+            "comments": recipe.get_comments(),
         }
         for recipe in all_recipes
     ]
-    return render_template('recipes/recipes.html', recipes=recipes_with_comments)
+
+    return render_template('recipes/recipes.html', recipes=recipes_with_comments_and_ratings)
+
 
 @recipes.route('/<int:recipe_id>/add_comment', methods=['POST'])
 @login_required
@@ -183,3 +194,20 @@ def edit_comment_route(comment_id):
     if result['error']:
         return jsonify({"error": result['message']}), 400
     return jsonify({"message": result['message']}), 200
+
+@recipes.route('/recipes/rate/<int:recipe_id>', methods=['POST'])
+@login_required
+def rate_recipe_route(recipe_id):
+    try:
+        stars = int(request.form.get('stars'))
+        result = rate_recipe(recipe_id=recipe_id, user_id=current_user.id, stars=stars)
+        
+        if result['error']:
+            flash(result['message'], 'danger')
+        else:
+            flash(result['message'], 'success')
+    
+    except ValueError:
+        flash('Valeur incorrecte pour la note.', 'danger')
+
+    return redirect(url_for('recipes.index'))

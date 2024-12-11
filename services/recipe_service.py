@@ -1,6 +1,6 @@
 from flask import current_app
-from models.models_sql import Recipe, RecipeIngredient, Ingredient
-from extensions import db
+from models.models_sql import Recipe, RecipeIngredient, Ingredient, Rating
+from extensions import db, photos 
 import json
 import imghdr
 from werkzeug.utils import secure_filename
@@ -85,7 +85,7 @@ def delete_recipe(id):
     except Exception as e:
         return {'error': True, 'message': str(e)}
 
-def edit_recipe(id, title, description, ingredients_json):
+def edit_recipe(id, title, description, ingredients_json, image_file=None):
     try:
         recipe = Recipe.query.get_or_404(id)
         
@@ -93,13 +93,19 @@ def edit_recipe(id, title, description, ingredients_json):
         recipe.title = title
         recipe.description = description
 
-        # Convertir la chaîne JSON en liste Python
+        # Gestion de l'image
+        if image_file and allowed_file(image_file.filename):
+            # Sécurisation du nom du fichier
+            filename = secure_filename(image_file.filename)
+            filepath = photos.save(image_file, name=filename)
+                        
+            # Mise à jour du chemin de l'image dans la base de données
+            recipe.image = 'uploads/images/' + filename
+            
+        # Gestion des ingrédients
         ingredients = json.loads(ingredients_json)
-        
-        # Supprimer les relations existantes avec les ingrédients
         RecipeIngredient.query.filter_by(recipe_id=recipe.id).delete()
 
-        # Ajouter les nouveaux ingrédients
         for ingredient_data in ingredients:
             ingredient_name = ingredient_data['name']
             ingredient = Ingredient.query.filter_by(name_ingredient=ingredient_name).first()
@@ -121,6 +127,40 @@ def edit_recipe(id, title, description, ingredients_json):
         return {'error': False, 'message': 'Recipe updated successfully.'}
     
     except Exception as e:
+        return {'error': True, 'message': str(e)}
+
+def rate_recipe(recipe_id, user_id, stars):
+    """
+    Service pour ajouter ou mettre à jour une note pour une recette.
+    
+    Args:
+        recipe_id (int): ID de la recette.
+        user_id (int): ID de l'utilisateur qui note.
+        stars (int): Note attribuée (1 à 5).
+    
+    Returns:
+        dict: Résultat de l'opération avec un message.
+    """
+    try:
+        if stars < 1 or stars > 5:
+            return {'error': True, 'message': 'La note doit être comprise entre 1 et 5.'}
+
+        # Vérifier si une note existe déjà pour cet utilisateur et cette recette
+        existing_rating = Rating.query.filter_by(recipe_id=recipe_id, user_id=user_id).first()
+        if existing_rating:
+            existing_rating.stars = stars
+            message = 'Votre note a été mise à jour.'
+        else:
+            # Créer une nouvelle note si elle n'existe pas
+            new_rating = Rating(stars=stars, recipe_id=recipe_id, user_id=user_id)
+            db.session.add(new_rating)
+            message = 'Votre note a été ajoutée.'
+
+        db.session.commit()
+        return {'error': False, 'message': message}
+    
+    except Exception as e:
+        db.session.rollback()  # Annuler la transaction en cas d'erreur
         return {'error': True, 'message': str(e)}
 
 
