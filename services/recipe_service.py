@@ -16,36 +16,43 @@ def validate_image(file):
     file_type = imghdr.what(file)
     return file_type in current_app.config['ALLOWED_EXTENSIONS']
 
+def validate_recipe_data(title, description, ingredients_json):
+    errors = {}
+    if not title or len(title) < 3:
+        errors['title'] = 'Le titre doit comporter au moins 3 caractères.'
+    if not isinstance(ingredients_json, str):
+        errors['ingredients_json'] = 'Les ingrédients doivent être une chaîne JSON valide.'
+    return errors
+
+
 def add_recipe(title, description, ingredients_json, user_id, image_file):
     try:
-        # Convertir la chaîne JSON en liste Python
+        # Validation des données
+        errors = validate_recipe_data(title, description, ingredients_json)
+        if errors:
+            return {'error': True, 'message': errors}
+
+        # Traitement normal après validation
         ingredients = json.loads(ingredients_json)
-        
-        # Créer un objet Recipe
         new_recipe = Recipe(title=title, description=description, user_id=user_id)
 
-        # Gestion du fichier image
+        # Gestion de l'image
         if image_file and allowed_file(image_file.filename):
             filename = secure_filename(image_file.filename)
             file_path = photos.save(image_file, name=filename)
             new_recipe.image = 'uploads/images/' + filename
-        
-        # Ajouter la recette à la session
+
         db.session.add(new_recipe)
-        db.session.flush()  # Flush pour obtenir l'ID de la recette
-        
-        # Ajouter les ingrédients à la recette
+        db.session.flush()
+
         for ingredient_data in ingredients:
             ingredient_name = ingredient_data['name']
             ingredient = Ingredient.query.filter_by(name_ingredient=ingredient_name).first()
-
             if not ingredient:
-                # Créer un nouvel ingrédient s'il n'existe pas
                 ingredient = Ingredient(name_ingredient=ingredient_name)
                 db.session.add(ingredient)
-                db.session.flush()  # Flush pour obtenir l'ID de l'ingrédient
+                db.session.flush()
 
-            # Ajouter la relation entre recette et ingrédient
             new_recipe_ingredient = RecipeIngredient(
                 recipe_id=new_recipe.id,
                 ingredient_id=ingredient.id,
@@ -53,12 +60,14 @@ def add_recipe(title, description, ingredients_json, user_id, image_file):
                 unit=ingredient_data['unit']
             )
             db.session.add(new_recipe_ingredient)
-        
+
         db.session.commit()
         return {'error': False, 'recipe_id': new_recipe.id}
     
     except Exception as e:
+        db.session.rollback()
         return {'error': True, 'message': str(e)}
+
 
 def get_recipe_with_comments(id):
     try:
@@ -69,8 +78,17 @@ def get_recipe_with_comments(id):
     except Exception as e:
         return {'error': True, 'message': str(e)}
 
+def validate_id(id_value, id_name="ID"):
+    if not isinstance(id_value, int) or id_value <= 0:
+        return f"{id_name} doit être un entier positif."
+    return None
+
+
 def delete_recipe(id):
     try:
+        error = validate_id(id, "Recipe ID")
+        if error:
+            return {'error': True, 'message': error}
         # Récupérer la recette à supprimer
         recipe = Recipe.query.get_or_404(id)
         

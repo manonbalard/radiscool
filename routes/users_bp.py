@@ -4,6 +4,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from models.models_sql  import User
+import re
 
 users = Blueprint('users', __name__)
 
@@ -46,8 +47,13 @@ def signup_post():
     email = request.form.get('email')
     password = request.form.get('password')
 
-    user = User.query.filter_by(email=email).first()
+    # Vérification de la force du mot de passe
+    if len(password) < 6:
+        flash('Password is too weak')  # Message d'erreur si le mot de passe est trop faible
+        return redirect(url_for('users.signup'))  # Redirection vers la page d'inscription si le mot de passe est faible
 
+    # Vérifiez si l'utilisateur existe déjà
+    user = User.query.filter_by(email=email).first()
     if user:
         flash('Email address already exists')
         return redirect(url_for('users.signup'))
@@ -55,16 +61,13 @@ def signup_post():
     # Hachage du mot de passe
     hashed_password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16)
 
-    
     # Création du nouvel utilisateur
     new_user = User(email=email, username=username, password=hashed_password)
-    print("Saisi :", password)
-    print("Haché :", hashed_password)
-
     db.session.add(new_user)
     db.session.commit()
     
-    return redirect(url_for('users.login'))
+    # Redirige l'utilisateur vers la page de connexion
+    return redirect(url_for('users.login'))  # Redirection vers la page de connexion après une inscription réussie
 
 
 @users.route('/profile')

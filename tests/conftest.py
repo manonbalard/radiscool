@@ -1,51 +1,43 @@
-import os
-import tempfile
 import pytest
 from myflaskapp import create_app, db
 from models.models_sql import User
+import secrets  # Importation du module secrets pour générer une clé secrète sécurisée
 
-@pytest.fixture(scope='module')
+# Fixture pour l'application de test
+@pytest.fixture
 def test_app():
+    # Crée l'application Flask avec une configuration spécifique pour les tests
     app = create_app()
+    
+    # Génération d'une clé secrète aléatoire et sécurisée
+    secret_key = secrets.token_hex(16)  # Crée une clé secrète de 32 caractères hexadécimaux
+    
     app.config.update({
         'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',  # Utilise une base de données en mémoire pour les tests
+        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',  # Base de données en mémoire pour tests
         'WTF_CSRF_ENABLED': False,  # Désactive CSRF pour les tests
+        'SECRET_KEY': secret_key,  # Utilisation de la clé secrète générée
     })
-    db.init_app(app)
-
+    
+    # Crée la base de données en mémoire avant chaque test
     with app.app_context():
+        db.init_app(app)  # Assurez-vous que l'instance de db est initialisée
         db.create_all()
+        yield app  # Donne l'application à utiliser pour le test
+        db.session.remove()  # Enlève la session après le test
+        db.drop_all()  # Détruit la base de données après chaque test
 
-    yield app
-
-    with app.app_context():
-        db.session.remove()
-        db.drop_all()
-
-@pytest.fixture(scope='module')
+# Fixture pour le client de test (utilisé pour faire des requêtes HTTP)
+@pytest.fixture
 def test_client(test_app):
     return test_app.test_client()
 
-@pytest.fixture(scope='function')
-def session(test_app):
-    connection = db.engine.connect()
-    transaction = connection.begin()
-    options = dict(bind=connection, binds={})
-    session = db.create_scoped_session(options=options)
-
-    db.session = session
-
-    yield session
-
-    transaction.rollback()
-    connection.close()
-    session.remove()
-
+# Fixture pour créer un utilisateur dans la base de données
 @pytest.fixture
 def user(test_app):
-    with app.app_context():
+    # Crée un utilisateur dans la base de données pour les tests
+    with test_app.app_context():
         user = User(email='test@example.com', password='password')
         db.session.add(user)
-        db.session.commit()
-        return user
+        db.session.commit()  # Sauvegarde dans la base de données
+        return db.session.merge(user)  # Retourne l'utilisateur pour l'utiliser dans les tests
