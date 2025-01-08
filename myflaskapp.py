@@ -21,6 +21,10 @@ class Config(object):
     # APScheduler configuration
     SCHEDULER_API_ENABLED = True
 
+    # Ajoutez les configurations suivantes
+    SERVER_NAME = os.getenv("SERVER_NAME", "localhost:5000")  # Par défaut, utilise localhost:5000
+    PREFERRED_URL_SCHEME = "http"  # Remplacez par "https" si votre application utilise HTTPS
+
 # App Initialization
 app = Flask(__name__)
 app.config.from_object(Config)

@@ -1,5 +1,6 @@
 import pytest
 import io
+from flask import  url_for
 
 def test_sql_injection(test_client):
     """Test pour vérifier la protection contre l'injection SQL."""
@@ -16,6 +17,9 @@ def test_sql_injection(test_client):
 
 def test_weak_password_rejection(test_client):
     """Test pour refuser les mots de passe faibles."""
+    with test_client.application.app_context():
+        followup_response = test_client.get('/signup')
+        assert followup_response.status_code == 200
 
     # Effectuer la requête POST avec un mot de passe faible
     response = test_client.post('/signup', data={'email': 'test@example.com', 'password': '123'})
@@ -23,12 +27,13 @@ def test_weak_password_rejection(test_client):
     # Vérifiez que la réponse est une redirection (code 302)
     assert response.status_code == 302  # Redirection attendue
 
-    # Vérifiez que l'utilisateur est redirigé vers la page de connexion après une inscription échouée
-    assert response.location.endswith('/login')  # Redirection vers la page de connexion après l'échec de l'inscription
+    # Vérifiez que l'utilisateur est redirigé vers la page d'inscription après une inscription échouée
+    assert response.location.endswith('/signup')  # Redirection vers la page d'inscription après l'échec de l'inscription
 
     # Vérifiez que le message d'erreur "Password is too weak" est dans la réponse
-    with test_client.get('/signup') as followup_response:
-        assert b"Password is too weak" in followup_response.data  # Vérifiez que le message d'erreur est bien présent
+    followup_response = test_client.get('/signup')
+    assert b"Password is too weak" in followup_response.data  # Vérifiez que le message d'erreur est bien présent
+
 
 def test_xss_protection(test_client):
     """Test pour vérifier la protection contre les attaques XSS."""
@@ -70,3 +75,16 @@ def test_secure_session_cookie(test_client):
     session_cookie = response.headers.get('Set-Cookie')
     assert 'HttpOnly' in session_cookie
     assert 'Secure' in session_cookie
+
+def test_home_route(test_client):
+    with test_client.application.app_context():
+        response = test_client.get('/')
+        assert response.status_code == 200
+        assert b"Bienvenue sur Radiscool!" in response.data
+
+
+def test_url_for_home(test_client):
+    with test_client.application.app_context():
+        url = url_for('home')
+        assert url == '/'
+

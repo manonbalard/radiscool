@@ -16,6 +16,7 @@ def test_app():
         'TESTING': True,
         'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',  # Base de données en mémoire pour tests
         'WTF_CSRF_ENABLED': False,  # Désactive CSRF pour les tests
+        "SERVER_NAME": "localhost",
         'SECRET_KEY': secret_key,  # Utilisation de la clé secrète générée
     })
     

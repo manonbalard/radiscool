@@ -12,15 +12,15 @@ from io import BytesIO
 import json
 
 # Tests
-def test_addrecipe(client, user):
-    with client as c:
+def test_addrecipe(test_client, user):
+    with test_client as c:
         login_user(user)
         response = c.get(url_for('recipes.addrecipe'))
         assert response.status_code == 200
         assert b'Add Recipe' in response.data
 
-def test_addrecipe_with_ingredients(client, user):
-    with client as c:
+def test_addrecipe_with_ingredients(test_client, user):
+    with test_client as c:
         login_user(user)
         data = {
             'title': 'Test Recipe',
