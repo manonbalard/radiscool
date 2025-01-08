@@ -7,15 +7,15 @@
   <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
   
   <div class="container">
-    <h2>Créez votre recette ci-dessous:</h2>
+    <h2>Créez votre recette ci-dessous</h2>
     <form id="recipe-form" enctype="multipart/form-data" method="POST">
         <div class="mb-3">
-            <label for="title" class="form-label">Titre de la recette:</label>
+            <label for="title" class="form-label">Titre de la recette</label>
             <input type="text" class="form-control" id="title" name="title" placeholder="Entrez le titre de la recette" required>
         </div>
 
         <!-- Section des ingrédients -->
-        <h3>Ingrédients:</h3>
+        <h3>Ingrédients</h3>
         <ul id="ingredients-list" class="list-group mb-3"></ul>
         <div class="row mb-3">
             <div class="col">
@@ -34,13 +34,13 @@
 
         <!-- Section description -->
         <div class="mb-3">
-            <label for="description" class="form-label">Description de la recette:</label>
+            <label for="description" class="form-label">Description de la recette</label>
             <textarea class="form-control" id="description" name="description" rows="3" placeholder="Décrivez les étapes de la recette" required></textarea>
         </div>
 
         <!-- Section image -->
         <div class="mb-3">
-            <label for="recipeImage" class="form-label">Image de la recette:</label>
+            <label for="recipeImage" class="form-label">Image de la recette</label>
             <input type="file" class="form-control" id="recipeImage" name="recipeImage" accept="image/*" onchange="previewImage();">
             <img id="imagePreview" src="#" alt="Image Preview" style="max-width: 300px; max-height: 300px; display: none;"/>
         </div>
