@@ -100,3 +100,10 @@ scheduler.start()
 # Main Entry Point
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)
+
+def create_app(config_name='testing'):
+    app = Flask(__name__)
+    app.config.from_object(config_name)
+    app.register_blueprint(recipes)
+    app.register_blueprint(users)
+    return app

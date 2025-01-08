@@ -4,14 +4,14 @@ from flask_login import UserMixin
 class RecipeIngredient(db.Model):
     __tablename__ = 'recipe_ingredient'
     
-    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), primary_key=True)
-    ingredient_id = db.Column(db.Integer, db.ForeignKey('ingredient.id'), primary_key=True)
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id', ondelete='CASCADE'), primary_key=True)
+    ingredient_id = db.Column(db.Integer, db.ForeignKey('ingredient.id', ondelete='CASCADE'), primary_key=True)
     quantity = db.Column(db.Float)  
     unit = db.Column(db.String(20))
 
     # Relations
-    recipe = db.relationship('Recipe', back_populates='ingredients')
-    ingredient = db.relationship('Ingredient', back_populates='recipes')
+    recipe = db.relationship('Recipe', back_populates='ingredients', passive_deletes=True)
+    ingredient = db.relationship('Ingredient', back_populates='recipes', passive_deletes=True)
 
 
 class Recipe(db.Model):

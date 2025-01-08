@@ -71,19 +71,35 @@ def get_recipe_with_comments(id):
 
 def delete_recipe(id):
     try:
+        # Récupérer la recette à supprimer
         recipe = Recipe.query.get_or_404(id)
         
-        # Supprimer les relations dans RecipeIngredient
+        # Récupérer les ingrédients liés à cette recette
+        recipe_ingredients = RecipeIngredient.query.filter_by(recipe_id=recipe.id).all()
+
+        # Supprimer les relations de RecipeIngredient
         RecipeIngredient.query.filter_by(recipe_id=recipe.id).delete()
+
+        # Pour chaque ingrédient, vérifier s'il est utilisé dans une autre recette
+        for relation in recipe_ingredients:
+            ingredient_id = relation.ingredient_id
+            
+            # Vérifier si l'ingrédient est utilisé ailleurs
+            other_relations = RecipeIngredient.query.filter_by(ingredient_id=ingredient_id).count()
+            if other_relations == 0:
+                # Supprimer l'ingrédient s'il n'est pas utilisé dans d'autres recettes
+                Ingredient.query.filter_by(id=ingredient_id).delete()
         
         # Supprimer la recette
         db.session.delete(recipe)
         db.session.commit()
         
-        return {'error': False, 'message': 'Recipe deleted.'}
+        return {'error': False, 'message': 'Recipe and unused ingredients deleted.'}
     
     except Exception as e:
+        db.session.rollback()  # Revenir en arrière en cas d'erreur
         return {'error': True, 'message': str(e)}
+
 
 def edit_recipe(id, title, description, ingredients_json, image_file=None):
     try:
