@@ -2,6 +2,7 @@ from extensions import mongo_db
 from datetime import datetime
 from bson import ObjectId
 
+
 class CommentNoSQL:
     def __init__(self, recipe_id, user_id, text):
         self.recipe_id = recipe_id  # ID de la recette dans la base SQL
@@ -9,13 +10,12 @@ class CommentNoSQL:
         self.text = text
         self.date = datetime.utcnow()
 
-
     def save(self):
         comment_data = {
             "recipe_id": self.recipe_id,
             "user_id": self.user_id,
             "text": self.text,
-            "date": self.date
+            "date": self.date,
         }
         return mongo_db.comments.insert_one(comment_data)
 
@@ -34,5 +34,5 @@ class CommentNoSQL:
         # Update the comment text and date
         return mongo_db.comments.update_one(
             {"_id": ObjectId(comment_id)},
-            {"$set": {"text": new_text, "date": datetime.utcnow()}}
+            {"$set": {"text": new_text, "date": datetime.utcnow()}},
         )

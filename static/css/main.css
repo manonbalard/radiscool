@@ -1,5 +1,5 @@
 .navbar {
-  background-color: #16645F !important; 
+  background-color: #16645F !important;
    color: white !important;
   }
 .navbar-brand {
@@ -22,14 +22,14 @@
   border: none;
   padding: 0;
   margin: 0;
-  color: blue; 
-  text-decoration: underline; 
+  color: blue;
+  text-decoration: underline;
 }
 
 .btn-as-link:hover,
 .btn-as-link:focus {
-  text-decoration: none; 
-  color: darkblue; 
+  text-decoration: none;
+  color: darkblue;
 }
 
 .hidden {

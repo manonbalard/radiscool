@@ -31,7 +31,7 @@
             </div>
             <button type="submit" class="btn btn-primary">Modifier la recette</button>
         </form>
-        
+
         <h3>Ingrédients</h3>
         <ul id="ingredients-list">
             {% for recipe_ingredient in ingredients %}
@@ -54,10 +54,10 @@
                 <li>Pas d'ingrédient trouvé</li>
             {% endfor %}
         </ul>
-        
 
-          
-        
+
+
+
         <!-- Separate form for adding new ingredients -->
         <form id="add-ingredient-form" method="POST">
             <input type="hidden" name="recipe_id" value="{{ recipe.id }}">
@@ -81,23 +81,23 @@
     <script>
         $(document).ready(function() {
             const recipeId = $('input[name="recipe_id"]').val(); // Récupérez l'ID de la recette à partir de l'élément caché
-        
+
             // Handle the edit button click to toggle the edit form for each ingredient
             $('.edit-btn').click(function() {
                 const ingredientId = $(this).closest('li').data('ingredient-id');
                 $(this).closest('li').find('.ingredient-edit-form').toggleClass('hidden');
             });
-        
+
             // Handle the ingredient edit form submission
             $('.ingredient-edit-form').submit(function(e) {
                 e.preventDefault(); // Prevent default form submission
-        
+
                 const ingredientId = $(this).data('ingredient-id');
                 const formData = {
                     quantity: $(this).find('input[name="quantity"]').val(),
                     unit: $(this).find('input[name="unit"]').val()
                 };
-        
+
                 // Send AJAX request to update ingredient
                 $.ajax({
                     url: '/recipes/edit_ingredient/' + recipeId + '/' + ingredientId,
@@ -113,11 +113,11 @@
                     }
                 });
             });
-        
+
             // Fonction pour supprimer un ingrédient
             $(document).on('click', '.delete-btn', function() {
                 const ingredientId = $(this).closest('li').data('ingredient-id');
-    
+
                 if (confirm("Voulez-vous vraiment supprimer cet ingrédient ?")) {
                     $.ajax({
                         url: '/recipes/delete_ingredient/' + recipeId + '/' + ingredientId,
@@ -132,7 +132,7 @@
                     });
                 }
             });
-    
+
             // Fonction pour rafraîchir la liste des ingrédients
             function refreshIngredientList(recipeId) {
                 $.ajax({
@@ -142,7 +142,7 @@
                         // Sélectionne l'élément de la liste des ingrédients dans le DOM
                         const ingredientList = $('#ingredients-list');
                         ingredientList.empty(); // Vide la liste existante
-    
+
                         // Remplit la liste avec les ingrédients actualisés
                         ingredients.forEach(function(ingredient) {
                             const listItem = `
@@ -160,13 +160,13 @@
                     }
                 });
             }
-    
+
             // Handle adding new ingredients
             $('#add-ingredient-button').click(function() {
                 const formData = $('#add-ingredient-form').serialize(); // Serialize the add ingredient form
-        
+
                 $.ajax({
-                    url: '/recipes/add_ingredient/' + recipeId, 
+                    url: '/recipes/add_ingredient/' + recipeId,
                     type: 'POST',
                     data: formData,
                     success: function(response) {
@@ -179,21 +179,21 @@
                 });
             });
         });
-        
+
         // Function to display image preview
         function previewImage() {
             var oFReader = new FileReader();
             oFReader.readAsDataURL(document.getElementById("recipeImage").files[0]);
-        
+
             oFReader.onload = function (oFREvent) {
                 document.getElementById("imagePreview").style.display = 'block';
                 document.getElementById("imagePreview").src = oFREvent.target.result;
             };
         }
     </script>
-    
-        
-    
+
+
+
     {% endblock %}
 </body>
 </html>

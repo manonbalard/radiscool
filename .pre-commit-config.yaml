@@ -1,0 +1,29 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace  # Supprime les espaces en fin de ligne
+      - id: end-of-file-fixer  # Ajoute une ligne vide à la fin des fichiers
+      - id: check-yaml  # Vérifie la syntaxe des fichiers YAML
+      - id: debug-statements  # Vérifie l'absence de `print` ou `pdb`
+
+  - repo: https://github.com/psf/black
+    rev: 24.10.0 # Dernière version de Black
+    hooks:
+      - id: black  # Formatte le code Python automatiquement
+
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.1.0  # Dernière version stable
+    hooks:
+      - id: flake8  # Vérifie la conformité PEP 8 et autres problèmes
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.14.1
+    hooks:
+      - id: mypy  # Analyse statique de type Python
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.8.2  # Dernière version stable
+    hooks:
+      - id: bandit
+        args: ['--exclude', 'tests/']
