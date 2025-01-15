@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Modifier la Recette</title>
+    <!-- Include jQuery and jQuery UI for interactive features -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -32,6 +33,7 @@
             <button type="submit" class="btn btn-primary">Modifier la recette</button>
         </form>
 
+        <!-- Ingredient section with edit and delete options -->
         <h3>Ingrédients</h3>
         <ul id="ingredients-list">
             {% for recipe_ingredient in ingredients %}
@@ -43,6 +45,7 @@
                         <button type="button" class="btn btn-info btn-sm edit-btn"><i class="fas fa-edit"></i> Modifier</button>
                         <button type="button" class="btn btn-danger btn-sm delete-btn"><i class="fas fa-trash"></i> Supprimer</button>
                     </div>
+                    <!-- Hidden form for editing ingredient details -->
                     <form class="ingredient-edit-form hidden" data-ingredient-id="{{ recipe_ingredient.ingredient_id }}">
                         <input type="text" name="quantity" placeholder="Quantité" value="{{ recipe_ingredient.quantity }}" required>
                         <input type="text" name="unit" placeholder="Unité" value="{{ recipe_ingredient.unit }}" required>
@@ -55,10 +58,7 @@
             {% endfor %}
         </ul>
 
-
-
-
-        <!-- Separate form for adding new ingredients -->
+        <!-- Form for adding new ingredients -->
         <form id="add-ingredient-form" method="POST">
             <input type="hidden" name="recipe_id" value="{{ recipe.id }}">
             <div class="row mb-3">
@@ -80,15 +80,15 @@
 
     <script>
         $(document).ready(function() {
-            const recipeId = $('input[name="recipe_id"]').val(); // Récupérez l'ID de la recette à partir de l'élément caché
+            const recipeId = $('input[name="recipe_id"]').val(); // Retrieve recipe ID from hidden input field
 
-            // Handle the edit button click to toggle the edit form for each ingredient
+            // Toggle edit form visibility for each ingredient when the edit button is clicked
             $('.edit-btn').click(function() {
                 const ingredientId = $(this).closest('li').data('ingredient-id');
                 $(this).closest('li').find('.ingredient-edit-form').toggleClass('hidden');
             });
 
-            // Handle the ingredient edit form submission
+            // Submit ingredient edit form via AJAX
             $('.ingredient-edit-form').submit(function(e) {
                 e.preventDefault(); // Prevent default form submission
 
@@ -98,15 +98,15 @@
                     unit: $(this).find('input[name="unit"]').val()
                 };
 
-                // Send AJAX request to update ingredient
+                // Send AJAX request to update the ingredient details
                 $.ajax({
                     url: '/recipes/edit_ingredient/' + recipeId + '/' + ingredientId,
                     type: 'POST',
-                    contentType: 'application/json',  // Indiquer le type de contenu JSON
-                    data: JSON.stringify(formData),    // Convertir les données en JSON
+                    contentType: 'application/json',  // Specify JSON content type
+                    data: JSON.stringify(formData),    // Send data as JSON string
                     success: function(response) {
-                        alert(response.message); // Affiche un message de succès
-                        refreshIngredientList(recipeId); // Rafraîchit la liste des ingrédients après la mise à jour
+                        alert(response.message); // Display success message
+                        refreshIngredientList(recipeId); // Refresh ingredient list after update
                     },
                     error: function(xhr, status, error) {
                         console.error(error);
@@ -114,7 +114,7 @@
                 });
             });
 
-            // Fonction pour supprimer un ingrédient
+            // Handle ingredient deletion
             $(document).on('click', '.delete-btn', function() {
                 const ingredientId = $(this).closest('li').data('ingredient-id');
 
@@ -123,27 +123,27 @@
                         url: '/recipes/delete_ingredient/' + recipeId + '/' + ingredientId,
                         type: 'POST',
                         success: function(response) {
-                            alert(response.message); // Affiche un message de succès
-                            refreshIngredientList(recipeId); // Rafraîchit la liste des ingrédients après la suppression
+                            alert(response.message); // Display success message
+                            refreshIngredientList(recipeId); // Refresh ingredient list after deletion
                         },
                         error: function(xhr, status, error) {
-                            console.error('Erreur lors de la suppression de l\'ingrédient:', error);
+                            console.error('Error deleting ingredient:', error);
                         }
                     });
                 }
             });
 
-            // Fonction pour rafraîchir la liste des ingrédients
+            // Refresh the list of ingredients
             function refreshIngredientList(recipeId) {
                 $.ajax({
                     url: '/recipes/get_ingredients/' + recipeId,
                     type: 'GET',
                     success: function(ingredients) {
-                        // Sélectionne l'élément de la liste des ingrédients dans le DOM
+                        // Select the ingredient list container in the DOM
                         const ingredientList = $('#ingredients-list');
-                        ingredientList.empty(); // Vide la liste existante
+                        ingredientList.empty(); // Clear existing ingredient list
 
-                        // Remplit la liste avec les ingrédients actualisés
+                        // Populate the list with updated ingredient data
                         ingredients.forEach(function(ingredient) {
                             const listItem = `
                             <li data-ingredient-id="${ingredient.id}">
@@ -156,12 +156,12 @@
                         });
                     },
                     error: function(xhr, status, error) {
-                        console.error('Erreur lors du chargement des ingrédients:', error);
+                        console.error('Error loading ingredients:', error);
                     }
                 });
             }
 
-            // Handle adding new ingredients
+            // Add a new ingredient via AJAX
             $('#add-ingredient-button').click(function() {
                 const formData = $('#add-ingredient-form').serialize(); // Serialize the add ingredient form
 
@@ -170,8 +170,8 @@
                     type: 'POST',
                     data: formData,
                     success: function(response) {
-                        alert(response.message); // Affiche un message de succès
-                        refreshIngredientList(recipeId); // Rafraîchit la liste des ingrédients après l'ajout
+                        alert(response.message); // Display success message
+                        refreshIngredientList(recipeId); // Refresh ingredient list after addition
                     },
                     error: function(xhr, status, error) {
                         console.error(error);
@@ -180,7 +180,7 @@
             });
         });
 
-        // Function to display image preview
+        // Display image preview when a file is selected
         function previewImage() {
             var oFReader = new FileReader();
             oFReader.readAsDataURL(document.getElementById("recipeImage").files[0]);
@@ -191,8 +191,6 @@
             };
         }
     </script>
-
-
 
     {% endblock %}
 </body>

@@ -1,10 +1,11 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container">
+    <!-- Recipe Title -->
     <h1>{{ recipe.title }}</h1>
 
     <div class="row mb-4">
-        <!-- Image Display on the left -->
+        <!-- Image Display Section -->
         <div class="col-md-6">
             {% if recipe.image %}
             <img src="{{ url_for('static', filename=recipe.image) }}" alt="Image of {{ recipe.title }}" style="max-width: 100%; height: auto;">
@@ -13,7 +14,7 @@
             {% endif %}
         </div>
 
-        <!-- Ingredients on the right -->
+        <!-- Ingredients Section -->
         <div class="col-md-6">
             <h2>Ingrédients</h2>
             <ul>
@@ -28,7 +29,7 @@
         </div>
     </div>
 
-    <!-- Description of the recipe below -->
+    <!-- Recipe Description Section -->
     <div class="row mb-4">
         <div class="col-12">
             <h2>Description</h2>
@@ -37,15 +38,19 @@
     </div>
 
     <!-- Comments Section -->
-<div class="row mb-4">
-    <div class="col-12">
-        <h2>Commentaires</h2>
-        <div class="comments-list">
-            {% for comment in comments %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>Commentaires</h2>
+            <div class="comments-list">
+                {% for comment in comments %}
                 <div class="comment-item border-bottom pb-2 mb-2">
-                    <p><strong>{{ comment.username }}:</strong> {{ comment.text }} <br>
-                    <small class="text-muted">{{ comment.date.strftime('%Y-%m-%d %H:%M:%S') }}</small></p>
+                    <!-- Display comment details -->
+                    <p>
+                        <strong>{{ comment.username }}:</strong> {{ comment.text }} <br>
+                        <small class="text-muted">{{ comment.date.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                    </p>
                     {% if current_user.id == comment.user_id %}
+                    <!-- Options to edit or delete the comment if user is the owner -->
                     <div class="d-flex justify-content-between">
                         <button class="btn btn-sm btn-link text-primary" onclick="editComment('{{ comment._id }}', '{{ comment.text }}')">Modifier</button>
                         <form action="{{ url_for('recipes.delete_comment_route', comment_id=comment._id) }}" method="post" class="d-inline">
@@ -54,15 +59,15 @@
                     </div>
                     {% endif %}
                 </div>
-            {% else %}
+                {% else %}
+                <!-- Message when no comments are available -->
                 <p>Pas encore de commentaire pour cette recette.</p>
-            {% endfor %}
+                {% endfor %}
+            </div>
         </div>
-    </div>
 
-
-
-            <!-- Add new comment form -->
+        <!-- Form to Add a New Comment -->
+        <div class="col-12">
             <h3>Ajouter un commentaire</h3>
             <form action="{{ url_for('recipes.add_comment_route', recipe_id=recipe.id) }}" method="POST">
                 <div class="form-group">
@@ -73,10 +78,12 @@
         </div>
     </div>
 
-    <!-- Buttons -->
+    <!-- Navigation Buttons -->
     <div class="row">
         <div class="col-12">
+            <!-- Button to return to the list of recipes -->
             <a href="{{ url_for('recipes.index') }}" class="btn btn-primary">Retour à la liste des recettes</a>
+            <!-- Button to edit the recipe -->
             <a href="{{ url_for('recipes.edit_recipe_route', id=recipe.id) }}" class="btn btn-secondary">Modifier la recette</a>
         </div>
     </div>

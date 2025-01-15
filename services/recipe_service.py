@@ -7,7 +7,15 @@ from werkzeug.utils import secure_filename
 
 
 def allowed_file(filename):
-    """Vérifie si l'extension du fichier est autorisée."""
+    """
+    Check if a file has an allowed extension.
+
+    Args:
+        filename (str): The name of the file.
+
+    Returns:
+        bool: True if the file has an allowed extension, False otherwise.
+    """
     return (
         "." in filename
         and filename.rsplit(".", 1)[1].lower()
@@ -16,7 +24,15 @@ def allowed_file(filename):
 
 
 def validate_image(file):
-    """Valide si le fichier est réellement une image en vérifiant son type MIME."""
+    """
+    Validate whether the provided file is a valid image.
+
+    Args:
+        file (FileStorage): The file to validate.
+
+    Returns:
+        bool: True if the file is a valid image, False otherwise.
+    """
     if not file:
         return False
     file_type = imghdr.what(file)
@@ -24,36 +40,59 @@ def validate_image(file):
 
 
 def validate_recipe_data(title, description, ingredients_json):
+    """
+    Validate the data for creating or editing a recipe.
+
+    Args:
+        title (str): The title of the recipe.
+        description (str): The description of the recipe.
+        ingredients_json (str): JSON string of the ingredients.
+
+    Returns:
+        dict: A dictionary containing validation errors, if any.
+    """
     errors = {}
     if not title or len(title) < 3:
-        errors["title"] = "Le titre doit comporter au moins 3 caractères."
+        errors["title"] = "The title must be at least 3 characters long."
     if not isinstance(ingredients_json, str):
-        errors["ingredients_json"] = (
-            "Les ingrédients doivent être une chaîne JSON valide."
-        )
+        errors["ingredients_json"] = "Ingredients must be a valid JSON string."
     return errors
 
 
 def add_recipe(title, description, ingredients_json, user_id, image_file):
+    """
+    Add a new recipe to the database.
+
+    Args:
+        title (str): The title of the recipe.
+        description (str): The description of the recipe.
+        ingredients_json (str): JSON string of the ingredients.
+        user_id (int): The ID of the user creating the recipe.
+        image_file (FileStorage): An optional image file for the recipe.
+
+    Returns:
+        dict: Result indicating success or failure, with a message.
+    """
     try:
-        # Validation des données
+        # Validate recipe data.
         errors = validate_recipe_data(title, description, ingredients_json)
         if errors:
             return {"error": True, "message": errors}
 
-        # Traitement normal après validation
+        # Load ingredients from JSON.
         ingredients = json.loads(ingredients_json)
         new_recipe = Recipe(title=title, description=description, user_id=user_id)
 
-        # Gestion de l'image
+        # Handle image upload.
         if image_file and allowed_file(image_file.filename):
             filename = secure_filename(image_file.filename)
             photos.save(image_file, name=filename)
             new_recipe.image = "uploads/images/" + filename
 
         db.session.add(new_recipe)
-        db.session.flush()
+        db.session.flush()  # Make the recipe ID available.
 
+        # Add ingredients and their relationships.
         for ingredient_data in ingredients:
             ingredient_name = ingredient_data["name"]
             ingredient = Ingredient.query.filter_by(
@@ -81,6 +120,15 @@ def add_recipe(title, description, ingredients_json, user_id, image_file):
 
 
 def get_recipe_with_comments(id):
+    """
+    Retrieve a recipe along with its comments.
+
+    Args:
+        id (int): The ID of the recipe.
+
+    Returns:
+        dict: A dictionary containing the recipe and its comments.
+    """
     try:
         recipe = Recipe.query.get_or_404(id)
         comments = recipe.get_comments()
@@ -91,66 +139,93 @@ def get_recipe_with_comments(id):
 
 
 def validate_id(id_value, id_name="ID"):
+    """
+    Validate if a provided ID is a positive integer.
+
+    Args:
+        id_value (int): The ID value to validate.
+        id_name (str): The name of the ID for error messages.
+
+    Returns:
+        str | None: Error message if validation fails, otherwise None.
+    """
     if not isinstance(id_value, int) or id_value <= 0:
-        return f"{id_name} doit être un entier positif."
+        return f"{id_name} must be a positive integer."
     return None
 
 
 def delete_recipe(id):
+    """
+    Delete a recipe and its unused ingredients.
+
+    Args:
+        id (int): The ID of the recipe to delete.
+
+    Returns:
+        dict: Result indicating success or failure, with a message.
+    """
     try:
         error = validate_id(id, "Recipe ID")
         if error:
             return {"error": True, "message": error}
-        # Récupérer la recette à supprimer
+
+        # Retrieve the recipe to delete.
         recipe = Recipe.query.get_or_404(id)
 
-        # Récupérer les ingrédients liés à cette recette
+        # Retrieve ingredients related to the recipe.
         recipe_ingredients = RecipeIngredient.query.filter_by(recipe_id=recipe.id).all()
 
-        # Supprimer les relations de RecipeIngredient
+        # Delete RecipeIngredient relationships.
         RecipeIngredient.query.filter_by(recipe_id=recipe.id).delete()
 
-        # Pour chaque ingrédient, vérifier s'il est utilisé dans une autre recette
+        # Check and delete unused ingredients.
         for relation in recipe_ingredients:
             ingredient_id = relation.ingredient_id
-
-            # Vérifier si l'ingrédient est utilisé ailleurs
             other_relations = RecipeIngredient.query.filter_by(
                 ingredient_id=ingredient_id
             ).count()
             if other_relations == 0:
-                # Supprimer l'ingrédient s'il n'est pas utilisé dans d'autres recettes
                 Ingredient.query.filter_by(id=ingredient_id).delete()
 
-        # Supprimer la recette
+        # Delete the recipe.
         db.session.delete(recipe)
         db.session.commit()
 
         return {"error": False, "message": "Recipe and unused ingredients deleted."}
 
     except Exception as e:
-        db.session.rollback()  # Revenir en arrière en cas d'erreur
+        db.session.rollback()
         return {"error": True, "message": str(e)}
 
 
 def edit_recipe(id, title, description, ingredients_json, image_file=None):
+    """
+    Edit an existing recipe.
+
+    Args:
+        id (int): The ID of the recipe to edit.
+        title (str): The updated title of the recipe.
+        description (str): The updated description of the recipe.
+        ingredients_json (str): JSON string of the updated ingredients.
+        image_file (FileStorage): An optional new image file for the recipe.
+
+    Returns:
+        dict: Result indicating success or failure, with a message.
+    """
     try:
         recipe = Recipe.query.get_or_404(id)
 
-        # Mise à jour des informations de la recette
+        # Update recipe details.
         recipe.title = title
         recipe.description = description
 
-        # Gestion de l'image
+        # Handle image upload.
         if image_file and allowed_file(image_file.filename):
-            # Sécurisation du nom du fichier
             filename = secure_filename(image_file.filename)
             photos.save(image_file, name=filename)
-
-            # Mise à jour du chemin de l'image dans la base de données
             recipe.image = "uploads/images/" + filename
 
-        # Gestion des ingrédients
+        # Update ingredients.
         ingredients = json.loads(ingredients_json)
         RecipeIngredient.query.filter_by(recipe_id=recipe.id).delete()
 
@@ -182,39 +257,35 @@ def edit_recipe(id, title, description, ingredients_json, image_file=None):
 
 def rate_recipe(recipe_id, user_id, stars):
     """
-    Service pour ajouter ou mettre à jour une note pour une recette.
+    Add or update a rating for a recipe.
 
     Args:
-        recipe_id (int): ID de la recette.
-        user_id (int): ID de l'utilisateur qui note.
-        stars (int): Note attribuée (1 à 5).
+        recipe_id (int): The ID of the recipe to rate.
+        user_id (int): The ID of the user providing the rating.
+        stars (int): The rating score (1 to 5).
 
     Returns:
-        dict: Résultat de l'opération avec un message.
+        dict: Result indicating success or failure, with a message.
     """
     try:
         if stars < 1 or stars > 5:
-            return {
-                "error": True,
-                "message": "La note doit être comprise entre 1 et 5.",
-            }
+            return {"error": True, "message": "The rating must be between 1 and 5."}
 
-        # Vérifier si une note existe déjà pour cet utilisateur et cette recette
+        # Check if the user already rated the recipe.
         existing_rating = Rating.query.filter_by(
             recipe_id=recipe_id, user_id=user_id
         ).first()
         if existing_rating:
             existing_rating.stars = stars
-            message = "Votre note a été mise à jour."
+            message = "Your rating has been updated."
         else:
-            # Créer une nouvelle note si elle n'existe pas
             new_rating = Rating(stars=stars, recipe_id=recipe_id, user_id=user_id)
             db.session.add(new_rating)
-            message = "Votre note a été ajoutée."
+            message = "Your rating has been added."
 
         db.session.commit()
         return {"error": False, "message": message}
 
     except Exception as e:
-        db.session.rollback()  # Annuler la transaction en cas d'erreur
+        db.session.rollback()
         return {"error": True, "message": str(e)}

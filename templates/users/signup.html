@@ -3,38 +3,51 @@
     {% extends "layout.html" %}
     {% block content %}
     <div class="column is-4 is-offset-4">
-      <h3 class="title">Sign Up</h3>
-      <div class="box">
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div class="notification is-danger">
-                {{ messages[0] }}. Go to <a href="{{ url_for('users.login') }}">login page</a>.
-            </div>
-        {% endif %}
-        {% endwith %}
-          <form method="POST" action="/users/signup">
-              <div class="field">
-                  <div class="control">
-                      <input class="input is-large" type="email" name="email" placeholder="Email" autofocus="">
-                  </div>
-              </div>
+        <!-- Page Title -->
+        <h3 class="title">Sign Up</h3>
 
-              <div class="field">
-                  <div class="control">
-                      <input class="input is-large" type="text" name="username" placeholder="Username" autofocus="">
-                  </div>
-              </div>
+        <!-- Notification Box for Flash Messages -->
+        <div class="box">
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <!-- Display the first flash message and provide a link to the login page -->
+                <div class="notification is-danger">
+                    {{ messages[0] }}. Go to <a href="{{ url_for('users.login') }}">login page</a>.
+                </div>
+            {% endif %}
+            {% endwith %}
 
-              <div class="field">
-                  <div class="control">
-                      <input class="input is-large" type="password" name="password" placeholder="Password">
-                  </div>
-              </div>
+            <!-- Signup Form -->
+            <form method="POST" action="/users/signup">
+                <!-- Email Input -->
+                <div class="field">
+                    <div class="control">
+                        <!-- User enters their email here -->
+                        <input class="input is-large" type="email" name="email" placeholder="Email" autofocus="">
+                    </div>
+                </div>
 
-              <button class="button is-block is-info is-large is-fullwidth">Sign Up</button>
-          </form>
-      </div>
+                <!-- Username Input -->
+                <div class="field">
+                    <div class="control">
+                        <!-- User enters their desired username here -->
+                        <input class="input is-large" type="text" name="username" placeholder="Username" autofocus="">
+                    </div>
+                </div>
+
+                <!-- Password Input -->
+                <div class="field">
+                    <div class="control">
+                        <!-- User enters their password here -->
+                        <input class="input is-large" type="password" name="password" placeholder="Password">
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button class="button is-block is-info is-large is-fullwidth">Sign Up</button>
+            </form>
+        </div>
     </div>
-   {% endblock %}
+    {% endblock %}
   </body>
 </html>

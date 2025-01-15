@@ -3,37 +3,52 @@
     {% extends "layout.html" %}
     {% block content %}
     <div class="column is-4 is-offset-4">
-    <h3 class="title">Login</h3>
-    <div class="box">
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div class="notification is-danger">
-                {{ messages[0] }}
-            </div>
-        {% endif %}
-        {% endwith %}
-        <form method="POST" action="/users/login">
-            <div class="field">
-                <div class="control">
-                    <input class="input is-large" type="email" name="email" placeholder="Your Email" autofocus="">
-                </div>
-            </div>
+        <!-- Page Title -->
+        <h3 class="title">Login</h3>
 
-            <div class="field">
-                <div class="control">
-                    <input class="input is-large" type="password" name="password" placeholder="Your Password">
+        <!-- Notification Box for Flash Messages -->
+        <div class="box">
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <!-- Display the first flash message -->
+                <div class="notification is-danger">
+                    {{ messages[0] }}
                 </div>
-            </div>
-            <div class="field">
-                <label class="checkbox">
-                    <input type="checkbox" name="remember">
-                    Remember me
-                </label>
-            </div>
-            <button class="button is-block is-info is-large is-fullwidth">Login</button>
-          </form>
-      </div>
+            {% endif %}
+            {% endwith %}
+
+            <!-- Login Form -->
+            <form method="POST" action="/users/login">
+                <!-- Email Input -->
+                <div class="field">
+                    <div class="control">
+                        <!-- User enters their email here -->
+                        <input class="input is-large" type="email" name="email" placeholder="Your Email" autofocus="">
+                    </div>
+                </div>
+
+                <!-- Password Input -->
+                <div class="field">
+                    <div class="control">
+                        <!-- User enters their password here -->
+                        <input class="input is-large" type="password" name="password" placeholder="Your Password">
+                    </div>
+                </div>
+
+                <!-- Remember Me Checkbox -->
+                <div class="field">
+                    <label class="checkbox">
+                        <!-- Option for the user to stay logged in -->
+                        <input type="checkbox" name="remember">
+                        Remember me
+                    </label>
+                </div>
+
+                <!-- Submit Button -->
+                <button class="button is-block is-info is-large is-fullwidth">Login</button>
+            </form>
+        </div>
     </div>
-   {% endblock %}
+    {% endblock %}
   </body>
 </html>

@@ -9,12 +9,13 @@
   <div class="container">
     <h2>Créez votre recette ci-dessous</h2>
     <form id="recipe-form" enctype="multipart/form-data" method="POST">
+        <!-- Recipe Title -->
         <div class="mb-3">
             <label for="title" class="form-label">Titre de la recette</label>
             <input type="text" class="form-control" id="title" name="title" placeholder="Entrez le titre de la recette" required>
         </div>
 
-        <!-- Section des ingrédients -->
+       <!-- Ingredients Section -->
         <h3>Ingrédients</h3>
         <ul id="ingredients-list" class="list-group mb-3"></ul>
         <div class="row mb-3">
@@ -32,13 +33,13 @@
             </div>
         </div>
 
-        <!-- Section description -->
+        <!-- Recipe Description -->
         <div class="mb-3">
             <label for="description" class="form-label">Description de la recette</label>
             <textarea class="form-control" id="description" name="description" rows="3" placeholder="Décrivez les étapes de la recette" required></textarea>
         </div>
 
-        <!-- Section image -->
+        <!-- Recipe Image -->
         <div class="mb-3">
             <label for="recipeImage" class="form-label">Image de la recette</label>
             <input type="file" class="form-control" id="recipeImage" name="recipeImage" accept="image/*" onchange="previewImage();">
@@ -49,79 +50,90 @@
   </div>
 
   <script>
-    // Function to display image preview
+    /**
+     * Preview the selected image by updating the `src` of an <img> element.
+     */
     function previewImage() {
-        var oFReader = new FileReader();
-        oFReader.readAsDataURL(document.getElementById("recipeImage").files[0]);
+      var oFReader = new FileReader(); // Create a new FileReader object
+      oFReader.readAsDataURL(document.getElementById("recipeImage").files[0]); // Read the selected file
 
-        oFReader.onload = function (oFREvent) {
-            document.getElementById("imagePreview").style.display = 'block';
-            document.getElementById("imagePreview").src = oFREvent.target.result;
-        };
+      oFReader.onload = function (oFREvent) {
+        // Display the image in the preview area
+        document.getElementById("imagePreview").style.display = 'block';
+        document.getElementById("imagePreview").src = oFREvent.target.result;
+      };
     }
 
     // Initialize an empty array to store ingredients.
     let ingredients = [];
 
-    // Wait for the DOM to be fully loaded before executing the following.
+    /**
+     * Initialize event listeners and functionality for the recipe form.
+     */
     $(document).ready(function() {
-        // Attach a click event listener to the 'Add Ingredient' button.
-        $('#add-ingredient-button').click(function() {
-            // Retrieve the values entered by the user for quantity, unit, and ingredient name.
-            const quantity = $('#quantity').val();
-            const unit = $('#unit').val();
-            const name = $('#name_ingredient').val();
+      /**
+       * Add a new ingredient to the list when the "Add Ingredient" button is clicked.
+       */
+      $('#add-ingredient-button').click(function() {
+        // Retrieve user inputs for quantity, unit, and ingredient name
+        const quantity = $('#quantity').val();
+        const unit = $('#unit').val();
+        const name = $('#name_ingredient').val();
 
-            // Add the new ingredient as an object to the ingredients array.
-            ingredients.push({quantity, unit, name});
+        // Add the new ingredient to the ingredients array
+        ingredients.push({quantity, unit, name});
 
-            // Reset the input fields for the next ingredient entry.
-            $('#quantity').val('');
-            $('#unit').val('');
-            $('#name_ingredient').val('');
+        // Reset input fields for the next ingredient
+        $('#quantity').val('');
+        $('#unit').val('');
+        $('#name_ingredient').val('');
 
-            // Update the display of ingredients on the webpage.
-            displayIngredients();
+        // Update the displayed list of ingredients
+        displayIngredients();
+      });
+
+      /**
+       * Submit the recipe form via an AJAX POST request.
+       * Prevents the default form submission behavior.
+       */
+      $('#recipe-form').submit(function(e) {
+        e.preventDefault(); // Prevent page reload
+
+        const formData = new FormData(this);  // Create FormData object
+        formData.append('ingredients', JSON.stringify(ingredients));  // Add ingredients array as JSON string
+
+        // Send AJAX POST request to the server
+        $.ajax({
+          url: "{{ url_for('recipes.addrecipe_with_ingredients') }}",
+          type: "POST",
+          data: formData,
+          processData: false,  // Do not process the FormData
+          contentType: false,  // Let the browser set the content type
+          success: function(response) {
+            console.log(response);  // Log the response
+            window.location.href = response.redirect;  // Redirect on success
+          },
+          error: function(xhr, status, error) {
+            console.error(error);  // Log errors
+          }
         });
-
-        // Attach an event listener to the form submission event.
-        $('#recipe-form').submit(function(e) {
-            // Prevent the default form submission behavior (page reload).
-            e.preventDefault();
-
-            const formData = new FormData(this);  // Create a new FormData object and pass the form to it
-            formData.append('ingredients', JSON.stringify(ingredients));  // Append ingredients as a JSON string
-
-            // Send an AJAX POST request to the server with the recipe and ingredients data.
-            $.ajax({
-                url: "{{ url_for('recipes.addrecipe_with_ingredients') }}", // The URL to which the request is sent.
-                type: "POST", // The type of request.
-                data: formData,
-                processData: false,  // Prevent jQuery from converting the FormData into a string
-                contentType: false,  // Prevent jQuery from setting the content type (let the browser set it)
-                success: function(response) {
-                    console.log(response);
-                    window.location.href = response.redirect;
-                },
-                error: function(xhr, status, error) {
-                    console.error(error);
-                }
-            });
-        });
+      });
     });
 
-    // Define a function to update the ingredients display on the webpage.
+    /**
+     * Update the displayed list of ingredients based on the current array.
+     */
     function displayIngredients() {
-        // Select the container where the ingredients will be listed.
-        const list = $('#ingredients-list');
-        // Clear any existing ingredients from the list.
-        list.empty();
-        // Iterate over each ingredient in the array and add it to the display list.
-        ingredients.forEach((ingredient, index) => {
-            list.append(`<div>${ingredient.quantity} ${ingredient.unit} ${ingredient.name}</div>`);
-        });
+      const list = $('#ingredients-list'); // Get the container for the ingredient list
+      list.empty(); // Clear the current list
+
+      // Add each ingredient to the list display
+      ingredients.forEach((ingredient, index) => {
+        list.append(`<div>${ingredient.quantity} ${ingredient.unit} ${ingredient.name}</div>`);
+      });
     }
   </script>
+
 
   {% endblock %}
 </body>

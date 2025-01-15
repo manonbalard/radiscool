@@ -21,25 +21,37 @@ from services.ingredient_service import (
     delete_ingredient,
     update_ingredient,
 )
-from services.comment_service import add_comment, delete_comment, update_comment
+from services.comment_service import add_comment, delete_comment
 
-
+# Create a blueprint for recipe-related routes
 recipes = Blueprint("recipes", __name__)
 
 
 @recipes.route("/addrecipe", methods=["GET"])
 def addrecipe():
+    """
+    Render the template for adding a new recipe.
+
+    Returns:
+        Rendered HTML template.
+    """
     return render_template("recipes/add_recipe.html")
 
 
 @recipes.route("/addrecipe_with_ingredients", methods=["POST"])
 @login_required
 def addrecipe_with_ingredients():
+    """
+    Handle the creation of a recipe with its associated ingredients.
+
+    Returns:
+        JSON response with the redirection URL or an error message.
+    """
     title = request.form["title"]
     description = request.form["description"]
     ingredients = request.form["ingredients"]  # JSON string
 
-    # Appel au service pour ajouter une recette
+    # Call the service to add the recipe
     result = add_recipe(
         title,
         description,
@@ -52,12 +64,22 @@ def addrecipe_with_ingredients():
         flash(result["message"], "danger")
         return redirect(url_for("recipes.addrecipe"))
 
-    return jsonify({"redirect": url_for("recipes.view_recipe", id=result["recipe_id"])})
+    return jsonify(
+        {"redirect": url_for("recipes.view_recipe_route", id=result["recipe_id"])}
+    )
 
 
 @recipes.route("/recipes/<int:id>", methods=["GET"])
 def view_recipe_route(id):
-    # Appel au service pour obtenir la recette et les commentaires
+    """
+    Display the details of a specific recipe along with its comments.
+
+    Args:
+        id (int): The ID of the recipe.
+
+    Returns:
+        Rendered HTML template or redirection if the recipe is not found.
+    """
     result = get_recipe_with_comments(id)
 
     if result["error"]:
@@ -72,6 +94,15 @@ def view_recipe_route(id):
 @recipes.route("/delete/<int:id>", methods=["POST"])
 @login_required
 def delete_recipe_route(id):
+    """
+    Delete a specific recipe by its ID.
+
+    Args:
+        id (int): The ID of the recipe to delete.
+
+    Returns:
+        Redirect to the recipe index page.
+    """
     result = delete_recipe(id)
 
     if result["error"]:
@@ -87,6 +118,16 @@ def delete_recipe_route(id):
 )
 @login_required
 def delete_ingredient_route(recipe_id, ingredient_id):
+    """
+    Delete an ingredient from a recipe.
+
+    Args:
+        recipe_id (int): The ID of the recipe.
+        ingredient_id (int): The ID of the ingredient to delete.
+
+    Returns:
+        JSON response with a success or error message.
+    """
     result = delete_ingredient(recipe_id, ingredient_id)
 
     return jsonify({"message": result["message"]}), 200 if not result["error"] else 400
@@ -95,34 +136,34 @@ def delete_ingredient_route(recipe_id, ingredient_id):
 @recipes.route("/edit_recipe/<int:id>", methods=["GET", "POST"])
 @login_required
 def edit_recipe_route(id):
+    """
+    Edit an existing recipe.
+
+    Args:
+        id (int): The ID of the recipe to edit.
+
+    Returns:
+        Rendered template for GET requests or a redirect for POST requests.
+    """
     if request.method == "POST":
-        # Récupération des données du formulaire
         title = request.form["title"]
         description = request.form["description"]
-        ingredients = request.form.get(
-            "ingredients", "[]"
-        )  # Valeur par défaut si aucun ingrédient
-        image_file = request.files.get(
-            "recipeImage"
-        )  # Récupérer l'image si elle existe
+        ingredients = request.form.get("ingredients", "[]")
+        image_file = request.files.get("recipeImage")
 
-        # Appel au service pour éditer la recette
         result = edit_recipe(id, title, description, ingredients, image_file)
 
         if result["error"]:
             flash(result["message"], "danger")
             return redirect(url_for("recipes.edit_recipe_route", id=id))
 
-        flash("La recette a été mise à jour avec succès.", "success")
+        flash("Recipe updated successfully.", "success")
         return redirect(url_for("recipes.view_recipe_route", id=id))
 
-    # Route GET : afficher la recette à éditer
-    recipe = Recipe.query.get(id)  # Récupère la recette depuis la base de données
+    recipe = Recipe.query.get(id)
     if not recipe:
-        flash("La recette demandée est introuvable.", "danger")
-        return redirect(
-            url_for("recipes.list_recipes")
-        )  # Redirige vers une liste ou une autre page appropriée
+        flash("The requested recipe was not found.", "danger")
+        return redirect(url_for("recipes.index"))
 
     ingredients = RecipeIngredient.query.filter_by(recipe_id=recipe.id).all()
     return render_template(
@@ -133,6 +174,16 @@ def edit_recipe_route(id):
 @recipes.route("/edit_ingredient/<int:recipe_id>/<int:ingredient_id>", methods=["POST"])
 @login_required
 def edit_ingredient_route(recipe_id, ingredient_id):
+    """
+    Update the quantity and unit of a specific ingredient in a recipe.
+
+    Args:
+        recipe_id (int): The ID of the recipe.
+        ingredient_id (int): The ID of the ingredient.
+
+    Returns:
+        JSON response with a success or error message.
+    """
     data = request.get_json()
     quantity = data.get("quantity")
     unit = data.get("unit")
@@ -145,11 +196,19 @@ def edit_ingredient_route(recipe_id, ingredient_id):
 @recipes.route("/add_ingredient/<int:recipe_id>", methods=["POST"])
 @login_required
 def add_ingredient_route(recipe_id):
+    """
+    Add a new ingredient to a recipe.
+
+    Args:
+        recipe_id (int): The ID of the recipe to add the ingredient to.
+
+    Returns:
+        JSON response with ingredient details or an error message.
+    """
     name_ingredient = request.form.get("name_ingredient")
     quantity = request.form.get("quantity")
     unit = request.form.get("unit")
 
-    # Appel au service pour ajouter un ingrédient
     result = add_ingredient_to_recipe(recipe_id, name_ingredient, quantity, unit)
 
     if result["error"]:
@@ -170,6 +229,15 @@ def add_ingredient_route(recipe_id):
 
 @recipes.route("/get_ingredients/<int:recipe_id>", methods=["GET"])
 def get_ingredients(recipe_id):
+    """
+    Retrieve all ingredients for a specific recipe.
+
+    Args:
+        recipe_id (int): The ID of the recipe.
+
+    Returns:
+        JSON response with a list of ingredients.
+    """
     recipe = Recipe.query.get_or_404(recipe_id)
     ingredients = [
         {
@@ -186,15 +254,20 @@ def get_ingredients(recipe_id):
 
 @recipes.route("/")
 def index():
+    """
+    Display the index page with a list of all recipes, including their average ratings and comments.
+
+    Returns:
+        Rendered HTML template with the list of recipes.
+    """
     all_recipes = Recipe.query.all()
 
-    # Récupérer les évaluations et calculer la moyenne des notes pour chaque recette
     recipes_with_comments_and_ratings = [
         {
             "id": recipe.id,
             "title": recipe.title,
             "image": recipe.image,
-            "average_rating": recipe.average_rating,  # Inclure la moyenne des notes
+            "average_rating": recipe.average_rating,
             "comments": recipe.get_comments(),
         }
         for recipe in all_recipes
@@ -208,12 +281,20 @@ def index():
 @recipes.route("/<int:recipe_id>/add_comment", methods=["POST"])
 @login_required
 def add_comment_route(recipe_id):
+    """
+    Add a comment to a recipe.
+
+    Args:
+        recipe_id (int): The ID of the recipe.
+
+    Returns:
+        JSON response with a success or error message.
+    """
     text = request.form.get("comment")
 
     if not text:
         return jsonify({"error": "Comment cannot be empty"}), 400
 
-    # Appel au service pour ajouter un commentaire
     result = add_comment(recipe_id, current_user.id, text)
 
     if result["error"]:
@@ -224,32 +305,34 @@ def add_comment_route(recipe_id):
 @recipes.route("/comments/delete/<comment_id>", methods=["POST"])
 @login_required
 def delete_comment_route(comment_id):
+    """
+    Delete a specific comment by its ID.
+
+    Args:
+        comment_id (str): The ID of the comment to delete.
+
+    Returns:
+        JSON response with a success or error message.
+    """
     result = delete_comment(comment_id)
 
     if result["error"]:
         return jsonify({"error": result["message"]}), 400
-    return jsonify({"message": result["message"]}), 200
-
-
-@recipes.route("/comments/edit/<comment_id>", methods=["POST"])
-@login_required
-def edit_comment_route(comment_id):
-    new_text = request.form.get("comment")
-
-    if not new_text:
-        return jsonify({"error": "Comment cannot be empty"}), 400
-
-    # Appel au service pour éditer un commentaire
-    result = update_comment(comment_id, new_text)
-
-    if result["error"]:
-        return jsonify({"error": result["message"]}), 400
-    return jsonify({"message": result["message"]}), 200
+    return (jsonify({"message": result["message"]}),)
 
 
 @recipes.route("/recipes/rate/<int:recipe_id>", methods=["POST"])
 @login_required
 def rate_recipe_route(recipe_id):
+    """
+    Rate a recipe with a number of stars.
+
+    Args:
+        recipe_id (int): The ID of the recipe to rate.
+
+    Returns:
+        Redirect to the recipe index page.
+    """
     try:
         stars = int(request.form.get("stars"))
         result = rate_recipe(recipe_id=recipe_id, user_id=current_user.id, stars=stars)
@@ -260,6 +343,6 @@ def rate_recipe_route(recipe_id):
             flash(result["message"], "success")
 
     except ValueError:
-        flash("Valeur incorrecte pour la note.", "danger")
+        flash("Invalid value for rating.", "danger")
 
     return redirect(url_for("recipes.index"))
