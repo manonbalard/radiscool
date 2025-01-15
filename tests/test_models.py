@@ -2,28 +2,28 @@ from myflaskapp import db
 from models.models_sql import User, Recipe, Ingredient, RecipeIngredient, Rating
 
 
-# Test du modèle User
+# Test for the User model
 def test_user_model(test_client, user):
-    """Test du modèle User"""
-    with test_client.application.app_context():  # Assurez-vous d'avoir le contexte Flask
-        # Récupération de l'utilisateur créé par la fixture 'user'
+    """Test the User model to ensure it functions correctly."""
+    with test_client.application.app_context():
+        # Retrieve the user created by the 'user' fixture
         retrieved_user = User.query.filter_by(email="test@example.com").first()
-        # Vérifie que l'utilisateur existe
+        # Check that the user exists
         assert retrieved_user is not None
-        # Vérifie que l'email est correct
+        # Verify that the email is correct
         assert retrieved_user.email == "test@example.com"
 
 
-# Test du modèle Recipe
+# Test for the Recipe model
 def test_recipe_model(test_client):
-    """Test du modèle Recipe"""
+    """Test the Recipe model to ensure it functions correctly."""
     with test_client.application.app_context():
-        # Crée un utilisateur pour associer la recette
+        # Create a user to associate with the recipe
         user = User(email="test@example.com", password="password")
         db.session.add(user)
         db.session.commit()
 
-        # Crée une recette associée à cet utilisateur
+        # Create a recipe associated with this user
         recipe = Recipe(
             title="Tarte aux pommes",
             description="Délicieuse tarte aux pommes",
@@ -32,36 +32,38 @@ def test_recipe_model(test_client):
         db.session.add(recipe)
         db.session.commit()
 
-        # Vérifie que la recette peut être récupérée correctement
+        # Check that the recipe can be retrieved correctly
         retrieved_recipe = Recipe.query.filter_by(title="Tarte aux pommes").first()
         assert retrieved_recipe is not None
         assert retrieved_recipe.description == "Délicieuse tarte aux pommes"
 
 
-# Test du modèle Ingredient
+# Test for the Ingredient model
 def test_ingredient_model(test_client, user):
-    with test_client.application.app_context():  # Assurez-vous d'avoir le contexte Flask
-        # Crée un ingrédient
+    """Test the Ingredient model to ensure it functions correctly."""
+    with test_client.application.app_context():
+        # Create an ingredient
         ingredient = Ingredient(name_ingredient="Sucre")
         db.session.add(ingredient)
         db.session.commit()
 
-        # Vérifie que l'ingrédient est correctement récupéré
+        # Check that the ingredient is correctly retrieved
         retrieved_ingredient = Ingredient.query.filter_by(
             name_ingredient="Sucre"
         ).first()
         assert retrieved_ingredient is not None
 
 
-# Test de la relation entre Recipe et Ingredient
+# Test the relationship between Recipe and Ingredient
 def test_recipe_ingredient_relationship(test_client, user):
-    with test_client.application.app_context():  # Assurez-vous d'avoir le contexte Flask
-        # Crée un utilisateur pour la recette
+    """Test the relationship between Recipe and Ingredient models."""
+    with test_client.application.app_context():
+        # Create a user for the recipe
         user = User(username="baker", email="baker@example.com", password="password")
         db.session.add(user)
         db.session.commit()
 
-        # Crée une recette et un ingrédient
+        # Create a recipe and an ingredient
         recipe = Recipe(
             title="Gâteau au chocolat", description="Riche et moelleux", user_id=user.id
         )
@@ -69,7 +71,7 @@ def test_recipe_ingredient_relationship(test_client, user):
         db.session.add_all([recipe, ingredient])
         db.session.commit()
 
-        # Ajoute une relation entre la recette et l'ingrédient
+        # Create a relationship between the recipe and the ingredient
         recipe_ingredient = RecipeIngredient(
             recipe_id=recipe.id,
             ingredient_id=ingredient.id,
@@ -79,20 +81,21 @@ def test_recipe_ingredient_relationship(test_client, user):
         db.session.add(recipe_ingredient)
         db.session.commit()
 
-        # Vérifie que l'ingrédient est correctement associé à la recette
+        # Check that the ingredient is correctly associated with the recipe
         retrieved_recipe = Recipe.query.filter_by(title="Gâteau au chocolat").first()
         assert retrieved_recipe.ingredients[0].ingredient.name_ingredient == "Chocolat"
 
 
-# Test du modèle Rating
+# Test for the Rating model
 def test_rating_model(test_client, user):
-    with test_client.application.app_context():  # Assurez-vous d'avoir le contexte Flask
-        # Crée un utilisateur pour la note
+    """Test the Rating model to ensure it functions correctly."""
+    with test_client.application.app_context():
+        # Create a user for the rating
         user = User(username="critic", email="critic@example.com", password="password")
         db.session.add(user)
         db.session.commit()
 
-        # Crée une recette pour laquelle attribuer une note
+        # Create a recipe to rate
         recipe = Recipe(
             title="Soupe à l'oignon", description="Classique français", user_id=user.id
         )
@@ -104,7 +107,12 @@ def test_rating_model(test_client, user):
         db.session.add(rating)
         db.session.commit()
 
-        # Vérifie que la note est correctement enregistrée
+        # Create a rating associated with the recipe and user
+        rating = Rating(stars=5, recipe_id=recipe.id, user_id=user.id)
+        db.session.add(rating)
+        db.session.commit()
+
+        # Check that the rating is correctly saved
         retrieved_rating = Rating.query.filter_by(
             recipe_id=recipe.id, user_id=user.id
         ).first()
