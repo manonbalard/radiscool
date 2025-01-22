@@ -3,7 +3,15 @@ from models.models_sql import Recipe, RecipeIngredient, Ingredient, Rating
 from extensions import db, photos
 import json
 import imghdr
-from werkzeug.utils import secure_filename
+import os
+import re
+
+
+def secure_filename(filename):
+    # Remplacer les caractères non alphanumériques (sauf les tirets et les underscores) par des underscores
+    filename = re.sub(r"[^a-zA-Z0-9_.-]", "_", filename)
+    # Sécuriser le nom du fichier en évitant que le nom contienne des extensions sensibles
+    return os.path.basename(filename)
 
 
 def allowed_file(filename):
