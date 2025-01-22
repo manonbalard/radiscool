@@ -1,6 +1,6 @@
 from flask import current_app
 from models.models_sql import Recipe, RecipeIngredient, Ingredient, Rating
-from extensions import db, photos
+from extensions import db
 import json
 import imghdr
 import os
@@ -111,7 +111,9 @@ def add_recipe(title, description, ingredients_json, user_id, image_file):
         # Handle image upload.
         if image_file and allowed_file(image_file.filename):
             filename = secure_filename(image_file.filename)
-            photos.save(image_file, name=filename)
+            upload_folder = current_app.config["UPLOADED_PHOTOS_DEST"]
+            file_path = os.path.join(upload_folder, filename)
+            image_file.save(file_path)
             new_recipe.image = "uploads/images/" + filename
 
         db.session.add(new_recipe)
@@ -247,7 +249,9 @@ def edit_recipe(id, title, description, ingredients_json, image_file=None):
         # Handle image upload.
         if image_file and allowed_file(image_file.filename):
             filename = secure_filename(image_file.filename)
-            photos.save(image_file, name=filename)
+            upload_folder = current_app.config["UPLOADED_PHOTOS_DEST"]
+            file_path = os.path.join(upload_folder, filename)
+            image_file.save(file_path)
             recipe.image = "uploads/images/" + filename
 
         # Update ingredients.
