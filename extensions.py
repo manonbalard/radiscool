@@ -14,8 +14,8 @@ login_manager = LoginManager()  # Flask-Login for user authentication management
 
 # Initialize MongoDB connection
 client = MongoClient(
-    "mongodb://localhost:27017/"
-)  # Connect to MongoDB on the local host, port 27017
+    "mongodb+srv://balardmanon:zxK6yNJUmxbZSYMr@cluster0.banop.mongodb.net/radiscool?retryWrites=true&w=majority&appName=Cluster0"
+)  # Connect to MongoDB Atlas on the cloud
 try:
     # Test if the connection to MongoDB is established by sending a ping
     client.admin.command("ping")  # Sending a ping to check if MongoDB responds
