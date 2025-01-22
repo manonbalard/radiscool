@@ -44,9 +44,6 @@ class Config(object):
     SCHEDULER_API_ENABLED = True
 
     # Additional configurations
-    SERVER_NAME = os.getenv(
-        "SERVER_NAME", "localhost:5000"
-    )  # Default to localhost:5000
     PREFERRED_URL_SCHEME = "http"  # Change to "https" if your app uses HTTPS
 
 
