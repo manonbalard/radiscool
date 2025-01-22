@@ -8,9 +8,26 @@ import re
 
 
 def secure_filename(filename):
-    # Remplacer les caractères non alphanumériques (sauf les tirets et les underscores) par des underscores
+    """
+    Securely sanitizes a given filename by removing unwanted characters
+    and ensuring it does not contain potentially dangerous extensions.
+
+    This function replaces any non-alphanumeric characters (except for hyphens,
+    underscores, and periods) with underscores, and ensures the returned filename
+    is safe to use in file systems.
+
+    Args:
+        filename (str): The original filename to be sanitized.
+
+    Returns:
+        str: The sanitized and secure filename.
+    """
+    # Replace non-alphanumeric characters (except hyphens, underscores, and periods)
+    # with underscores.
     filename = re.sub(r"[^a-zA-Z0-9_.-]", "_", filename)
-    # Sécuriser le nom du fichier en évitant que le nom contienne des extensions sensibles
+
+    # Return the basename of the filename to avoid directory traversal risks
+    # and to extract the filename without any path.
     return os.path.basename(filename)
 
 
