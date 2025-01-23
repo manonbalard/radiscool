@@ -12,24 +12,6 @@ db = SQLAlchemy()  # SQLAlchemy for database integration with SQL databases
 migrate = Migrate()  # Flask-Migrate to handle database migrations
 login_manager = LoginManager()  # Flask-Login for user authentication management
 
-# Initialize MongoDB connection
-client = MongoClient(
-    "mongodb+srv://balardmanon:zxK6yNJUmxbZSYMr@cluster0.banop.mongodb.net/radiscool?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true"
-)  # Connect to MongoDB Atlas on the cloud
-try:
-    # Test if the connection to MongoDB is established by sending a ping
-    client.admin.command("ping")  # Sending a ping to check if MongoDB responds
-    print(
-        "MongoDB connection successful!"
-    )  # If the ping succeeds, the connection is established
-except ServerSelectionTimeoutError as e:
-    # Handle errors in case MongoDB is not accessible
-    print(
-        f"MongoDB connection error: {e}"
-    )  # Display the error if MongoDB cannot be reached
-mongo_db = client["Radiscool"]  # Select the "Radiscool" database in MongoDB
-
-
 # Function to configure Flask extensions
 def configure_extensions(app):
     """
