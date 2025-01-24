@@ -6,28 +6,29 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
+from dotenv import load_dotenv
+
+# Charger les variables d'environnement depuis le fichier .env
+load_dotenv()
 
 # Initialize Flask extensions
 db = SQLAlchemy()  # SQLAlchemy for database integration with SQL databases
 migrate = Migrate()  # Flask-Migrate to handle database migrations
 login_manager = LoginManager()  # Flask-Login for user authentication management
 
+# Récupérer les URI depuis les variables d'environnement
+MONGO_URI = os.getenv("MONGO_URI")
+MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
+
 # Initialize MongoDB connection
-client = MongoClient(
-    "mongodb+srv://balardmanon:zxK6yNJUmxbZSYMr@cluster0.banop.mongodb.net/radiscool?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true"
-)  # Connect to MongoDB Atlas on the cloud
+client = MongoClient(MONGO_URI)  # Connect to MongoDB Atlas
 try:
-    # Test if the connection to MongoDB is established by sending a ping
-    client.admin.command("ping")  # Sending a ping to check if MongoDB responds
-    print(
-        "MongoDB connection successful!"
-    )  # If the ping succeeds, the connection is established
+    client.admin.command("ping")  # Test MongoDB connection
+    print("MongoDB connection successful!")
 except ServerSelectionTimeoutError as e:
-    # Handle errors in case MongoDB is not accessible
-    print(
-        f"MongoDB connection error: {e}"
-    )  # Display the error if MongoDB cannot be reached
-mongo_db = client["Radiscool"]  # Select the "Radiscool" database in MongoDB
+    print(f"MongoDB connection error: {e}")
+
+mongo_db = client[MONGO_DB_NAME]  # Select the database from the environment variable
 
 
 # Function to configure Flask extensions
