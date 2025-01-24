@@ -1,12 +1,15 @@
 import os
 from flask import current_app
 from werkzeug.utils import secure_filename
+import pymysql  # type: ignore
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 from dotenv import load_dotenv
+
+pymysql.install_as_MySQLdb()
 
 # Charger les variables d'environnement depuis le fichier .env
 load_dotenv()
