@@ -21,7 +21,9 @@ MONGO_URI = os.getenv("MONGO_URI")
 MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
 
 # Initialize MongoDB connection
-client = MongoClient(MONGO_URI)  # Connect to MongoDB Atlas
+client = MongoClient(
+    MONGO_URI, tls=True, tlsAllowInvalidCertificates=True
+)  # Connect to MongoDB Atlas
 try:
     client.admin.command("ping")  # Test MongoDB connection
     print("MongoDB connection successful!")
