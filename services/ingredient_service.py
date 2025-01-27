@@ -22,12 +22,12 @@ def validate_ingredient_data(name_ingredient, quantity, unit):
             "The ingredient name must be at least 2 characters long."
         )
 
-    # Validate that the quantity is a positive number.
+    # Validate that the quantity is a positive number (including float).
     if not isinstance(quantity, (int, float)) or quantity <= 0:
         errors["quantity"] = "The quantity must be a positive number."
 
     # Unit is optional, so we only check it if it is provided.
-    if unit is not None and len(unit) < 1:
+    if unit and len(unit) < 1:
         errors["unit"] = "The unit cannot be empty if provided."
 
     return errors

@@ -209,6 +209,15 @@ def add_ingredient_route(recipe_id):
     quantity = request.form.get("quantity")
     unit = request.form.get("unit")
 
+    # Convert the quantity to float (if it is a valid number)
+    try:
+        quantity = float(quantity) if quantity else 0.0
+    except ValueError:
+        return (
+            jsonify({"error": {"quantity": "The quantity must be a valid number."}}),
+            400,
+        )
+
     result = add_ingredient_to_recipe(recipe_id, name_ingredient, quantity, unit)
 
     if result["error"]:
