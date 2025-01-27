@@ -109,7 +109,10 @@ def add_recipe(title, description, ingredients_json, user_id, image_file):
         new_recipe = Recipe(title=title, description=description, user_id=user_id)
 
         # Handle image upload.
-        if image_file and allowed_file(image_file.filename):
+        if image_file:
+            if not allowed_file(image_file.filename):
+                return {"error": True, "message": "File type not allowed"}
+
             filename = secure_filename(image_file.filename)
             upload_folder = current_app.config["UPLOADED_PHOTOS_DEST"]
             file_path = os.path.join(upload_folder, filename)

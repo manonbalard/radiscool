@@ -167,6 +167,17 @@ if __name__ == "__main__":
     app.run(host="localhost", debug=debug_mode)
 
 
+class TestingConfig(Config):
+    """Configuration spécifique à l'environnement de test."""
+
+    SQLALCHEMY_DATABASE_URI = (
+        "sqlite:///:memory:"  # Exemple d'URL de base de données pour tests
+    )
+    SERVER_NAME = "localhost"  # Important pour la génération des URLs dans un test
+    TESTING = True
+    WTF_CSRF_ENABLED = False  # Désactiver CSRF pour les tests
+
+
 def create_app(config_name="testing"):
     """
     Factory function to create the Flask app with a specified configuration.
@@ -178,7 +189,14 @@ def create_app(config_name="testing"):
         Flask: The initialized Flask application.
     """
     app = Flask(__name__)
-    app.config.from_object(config_name)  # Load configuration
+    app.config.from_object(TestingConfig)  # Load configuration
+
+    # Ajouter la route home ici
+    @app.route("/")
+    def home():
+        """Render the homepage."""
+        return render_template("home.html")
+
     app.register_blueprint(recipes)  # Register the recipes blueprint
     app.register_blueprint(users)  # Register the users blueprint
     return app
