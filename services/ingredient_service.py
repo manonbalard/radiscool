@@ -15,6 +15,7 @@ def validate_ingredient_data(name_ingredient, quantity, unit):
         dict: A dictionary containing validation errors, if any.
     """
     errors = {}
+
     # Ensure the ingredient name is at least 2 characters long.
     if not name_ingredient or len(name_ingredient) < 2:
         errors["name_ingredient"] = (
@@ -25,9 +26,9 @@ def validate_ingredient_data(name_ingredient, quantity, unit):
     if not isinstance(quantity, (int, float)) or quantity <= 0:
         errors["quantity"] = "The quantity must be a positive number."
 
-    # Ensure the unit is not empty.
-    if not unit or len(unit) < 1:
-        errors["unit"] = "The unit is required."
+    # Unit is optional, so we only check it if it is provided.
+    if unit is not None and len(unit) < 1:
+        errors["unit"] = "The unit cannot be empty if provided."
 
     return errors
 
