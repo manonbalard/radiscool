@@ -47,43 +47,52 @@ def add_ingredient_to_recipe(recipe_id, name_ingredient, quantity, unit):
         dict: A dictionary indicating success or error, with a message.
     """
     try:
-        # Validate the input data for the ingredient.
+        # Valider les données de l'ingrédient.
         errors = validate_ingredient_data(name_ingredient, quantity, unit)
         if errors:
             return {"error": True, "message": errors}
 
-        # Check if the ingredient already exists in the database.
+        # Vérifier si l'ingrédient existe déjà dans la base de données.
         ingredient = Ingredient.query.filter_by(name_ingredient=name_ingredient).first()
+
+        # Si l'ingrédient n'existe pas, on l'ajoute à la base de données.
         if not ingredient:
-            # Add a new ingredient if it doesn't exist.
             ingredient = Ingredient(name_ingredient=name_ingredient)
             db.session.add(ingredient)
-            db.session.flush()  # Ensure the ingredient ID is available.
+            db.session.flush()  # Assure que l'ID de l'ingrédient est disponible
 
-        # Check if the ingredient is already associated with the recipe.
+        # Récupérer l'ID de l'ingrédient (pour l'envoyer dans la réponse)
+        ingredient_id = ingredient.id
+
+        # Vérifier si l'ingrédient est déjà associé à la recette
         existing = RecipeIngredient.query.filter_by(
-            recipe_id=recipe_id, ingredient_id=ingredient.id
+            recipe_id=recipe_id, ingredient_id=ingredient_id
         ).first()
+
         if existing:
-            # Update the existing ingredient's quantity and unit.
+            # Si l'ingrédient existe déjà pour cette recette, on met à jour la quantité et l'unité
             existing.quantity = float(quantity)
             existing.unit = unit
         else:
-            # Create a new relationship between the recipe and the ingredient.
+            # Ajouter la nouvelle relation entre la recette et l'ingrédient
             new_relation = RecipeIngredient(
                 recipe_id=recipe_id,
-                ingredient_id=ingredient.id,
+                ingredient_id=ingredient_id,
                 quantity=float(quantity),
                 unit=unit,
             )
             db.session.add(new_relation)
 
-        # Commit the transaction to save changes.
+        # Valider les changements dans la base de données
         db.session.commit()
-        return {"error": False, "message": "Ingredient added successfully."}
+
+        return {
+            "error": False,
+            "message": "Ingredient added successfully.",
+            "ingredient_id": ingredient_id,
+        }
 
     except Exception as e:
-        # Roll back the transaction in case of an error.
         db.session.rollback()
         return {"error": True, "message": str(e)}
 
