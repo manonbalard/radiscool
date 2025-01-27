@@ -28,7 +28,7 @@
             <div class="mb-3">
                 <label for="recipeImage" class="form-label">Image de la recette:</label>
                 <input type="file" class="form-control" id="recipeImage" name="recipeImage" accept="image/*" onchange="previewImage();">
-                <img id="imagePreview" src="{{ recipe.image }}" alt="Image Preview" style="max-width: 300px; max-height: 300px; display: {{ 'none' if not recipe.image else 'block' }};">
+                <img id="imagePreview" src="{{ url_for('static', filename=recipe.image) }}" alt="Image Preview" style="max-width: 300px; max-height: 300px; display: {{ 'none' if not recipe.image else 'block' }};">
             </div>
             <button type="submit" class="btn btn-primary">Modifier la recette</button>
         </form>
