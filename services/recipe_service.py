@@ -226,27 +226,14 @@ def delete_recipe(id):
 
 
 def edit_recipe(id, title, description, ingredients_json, image_file=None):
-    """
-    Edit an existing recipe.
-
-    Args:
-        id (int): The ID of the recipe to edit.
-        title (str): The updated title of the recipe.
-        description (str): The updated description of the recipe.
-        ingredients_json (str): JSON string of the updated ingredients.
-        image_file (FileStorage): An optional new image file for the recipe.
-
-    Returns:
-        dict: Result indicating success or failure, with a message.
-    """
     try:
         recipe = Recipe.query.get_or_404(id)
 
-        # Update recipe details.
+        # Mettre à jour les détails de la recette.
         recipe.title = title
         recipe.description = description
 
-        # Handle image upload.
+        # Gérer le téléchargement de l'image.
         if image_file and allowed_file(image_file.filename):
             filename = secure_filename(image_file.filename)
             upload_folder = current_app.config["UPLOADED_PHOTOS_DEST"]
@@ -254,10 +241,10 @@ def edit_recipe(id, title, description, ingredients_json, image_file=None):
             image_file.save(file_path)
             recipe.image = "uploads/images/" + filename
 
-        # Update ingredients.
+        # Mettre à jour les ingrédients.
         ingredients = json.loads(ingredients_json)
-        RecipeIngredient.query.filter_by(recipe_id=recipe.id).delete()
 
+        # Gérer l'ajout de nouveaux ingrédients ou la mise à jour des existants.
         for ingredient_data in ingredients:
             ingredient_name = ingredient_data["name"]
             ingredient = Ingredient.query.filter_by(
@@ -265,17 +252,29 @@ def edit_recipe(id, title, description, ingredients_json, image_file=None):
             ).first()
 
             if not ingredient:
+                # Si l'ingrédient n'existe pas, on le crée.
                 ingredient = Ingredient(name_ingredient=ingredient_name)
                 db.session.add(ingredient)
                 db.session.flush()
 
-            new_recipe_ingredient = RecipeIngredient(
-                recipe_id=recipe.id,
-                ingredient_id=ingredient.id,
-                quantity=ingredient_data["quantity"],
-                unit=ingredient_data["unit"],
-            )
-            db.session.add(new_recipe_ingredient)
+            # Vérifier si cet ingrédient est déjà associé à cette recette.
+            recipe_ingredient = RecipeIngredient.query.filter_by(
+                recipe_id=recipe.id, ingredient_id=ingredient.id
+            ).first()
+
+            if recipe_ingredient:
+                # Si l'ingrédient existe déjà dans la recette, on met à jour les quantités et l'unité.
+                recipe_ingredient.quantity = ingredient_data["quantity"]
+                recipe_ingredient.unit = ingredient_data["unit"]
+            else:
+                # Si l'ingrédient n'est pas associé à cette recette, on crée une nouvelle association.
+                new_recipe_ingredient = RecipeIngredient(
+                    recipe_id=recipe.id,
+                    ingredient_id=ingredient.id,
+                    quantity=ingredient_data["quantity"],
+                    unit=ingredient_data["unit"],
+                )
+                db.session.add(new_recipe_ingredient)
 
         db.session.commit()
         return {"error": False, "message": "Recipe updated successfully."}
