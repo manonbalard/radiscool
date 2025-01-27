@@ -47,9 +47,9 @@
                     </div>
                     <!-- Hidden form for editing ingredient details -->
                     <form class="ingredient-edit-form hidden" data-ingredient-id="{{ recipe_ingredient.ingredient_id }}">
-                        <input type="text" name="quantity" placeholder="Quantité" value="{{ recipe_ingredient.quantity }}" required>
-                        <input type="text" name="unit" placeholder="Unité" value="{{ recipe_ingredient.unit }}" required>
-                        <input type="text" name="name_ingredient" placeholder="Nom" value="{{ recipe_ingredient.ingredient.name_ingredient }}" required>
+                        <input type="number" name="quantity" placeholder="Quantité" value="{{ recipe_ingredient.quantity }}" >
+                        <input type="text" name="unit" placeholder="Unité" value="{{ recipe_ingredient.unit }}" >
+                        <input type="text" name="name_ingredient" placeholder="Nom" value="{{ recipe_ingredient.ingredient.name_ingredient }}" >
                         <button type="submit" class="btn btn-success">Enregistrer</button>
                     </form>
                 </li>
