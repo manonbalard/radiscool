@@ -1,3 +1,8 @@
+/* Applique la police à tout le document */
+* {
+  font-family: 'Atkinson Hyperlegible', sans-serif !important;
+}
+
 .navbar {
   background-color: #16645F !important;
    color: white !important;
