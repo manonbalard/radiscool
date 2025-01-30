@@ -43,10 +43,10 @@
                 </div>
               </li>
             </ul>
-            <form class="d-flex" role="search">
-              <input class="form-control me-2" type="search" placeholder="Rechercher une recette" aria-label="Search">
-                <button class="btn btn-outline-success" type="submit" style="color: white">Rechercher</button>
-            </form>
+            <form class="d-flex" role="search" action="{{ url_for('recipes.search_by_ingredient') }}" method="GET">
+              <input class="form-control me-2" type="search" name="ingredient" placeholder="Rechercher un ingrédient" aria-label="Search">
+              <button class="btn btn-outline-success" type="submit" style="color: white">Rechercher</button>
+          </form>
           </div>
         </div>
       </nav>

@@ -320,3 +320,42 @@ def rate_recipe(recipe_id, user_id, stars):
     except Exception as e:
         db.session.rollback()
         return {"error": True, "message": str(e)}
+
+
+def search_recipes_by_ingredient(ingredient_name):
+    """Search recipes containing a given ingredient.
+
+    This function queries the database for an ingredient matching the given name
+    and retrieves all recipes that include it.
+
+    Args:
+        ingredient_name (str): The name of the ingredient to search for.
+
+    Returns:
+        tuple: A list of matching Recipe objects and an error message (None if no error).
+    """
+    # Check if an ingredient name was provided
+    if not ingredient_name:
+        return (
+            [],
+            "Veuillez fournir un nom d'ingrédient.",
+        )  # Return an empty list with an error message
+
+    # Search for the ingredient in the database (case-insensitive match)
+    ingredient = Ingredient.query.filter(
+        Ingredient.name_ingredient.ilike(f"%{ingredient_name}%")
+    ).first()
+
+    # If no ingredient is found, return an empty list with an error message
+    if not ingredient:
+        return [], "Aucun ingrédient trouvé avec ce nom."
+
+    # Retrieve all recipes that contain the found ingredient
+    recipes = (
+        Recipe.query.join(RecipeIngredient)
+        .filter(RecipeIngredient.ingredient_id == ingredient.id)
+        .all()
+    )
+
+    # Return the list of found recipes and None (indicating no error)
+    return recipes, None

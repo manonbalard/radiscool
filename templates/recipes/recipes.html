@@ -1,11 +1,21 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container">
-    <h1 class="mb-3">Liste des recettes</h1>
+        {% if search_term %}
+        <h2>Résultats pour "{{ search_term }}"</h2>
+    {% else %}
+        <h1 class="mb-3">Liste des recettes</h1>
+    {% endif %}
+
+    {% if error %}
+        <p class="text-danger">{{ error }}</p>
+    {% endif %}
     <!-- Button to add a new recipe -->
     <div class="d-flex justify-content-end mb-3">
         <a href="{{ url_for('recipes.addrecipe') }}" class="btn btn-primary">Ajouter une nouvelle recette</a>
     </div>
+
+
 
     <div class="row">
         <!-- Loop through recipes -->

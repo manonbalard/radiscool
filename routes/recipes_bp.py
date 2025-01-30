@@ -15,6 +15,7 @@ from services.recipe_service import (
     delete_recipe,
     edit_recipe,
     rate_recipe,
+    search_recipes_by_ingredient,
 )
 from services.ingredient_service import (
     add_ingredient_to_recipe,
@@ -355,3 +356,30 @@ def rate_recipe_route(recipe_id):
         flash("Invalid value for rating.", "danger")
 
     return redirect(url_for("recipes.index"))
+
+
+@recipes.route("/search", methods=["GET"])
+def search_by_ingredient():
+    """Route for searching recipes by ingredient.
+
+    This function retrieves the ingredient name from the request parameters,
+    calls the search service to find matching recipes, and renders the
+    recipes template with the results.
+
+    Returns:
+        A rendered HTML template displaying the list of recipes that contain
+        the searched ingredient.
+    """
+    # Get the ingredient name from the request, stripping any leading/trailing spaces
+    ingredient_name = request.args.get("ingredient", "").strip()
+
+    # Call the service function to search for recipes containing the ingredient
+    recipes, error = search_recipes_by_ingredient(ingredient_name)
+
+    # Render the recipes template with the search results and any possible error message
+    return render_template(
+        "recipes/recipes.html",
+        recipes=recipes,
+        search_term=ingredient_name,
+        error=error,
+    )
