@@ -6,35 +6,52 @@ from models.models_sql import User
 
 @pytest.fixture
 def test_app():
-    """Fixture pour créer l'application Flask pour les tests."""
-    app = create_app(config_name="testing")  # Crée l'application avec la config de test
+    """
+    Fixture to create the Flask application for testing.
 
-    # Initialisez les extensions pour l'application de test
+    This sets up the application with the testing configuration, initializes
+    the necessary extensions, and creates the database tables before running tests.
+    """
+    app = create_app(config_name="testing")  # Create the app with test configuration
+
+    # Initialize extensions for the test application
     with app.app_context():
-        configure_extensions(app)  # Assurez-vous que login_manager est bien initialisé
-        db.create_all()  # Crée toutes les tables avant de commencer les tests
+        configure_extensions(
+            app
+        )  # Ensure login_manager and other extensions are initialized
+        db.create_all()  # Create all tables before starting the tests
 
-    yield app  # Cette ligne permet d'utiliser l'application dans les tests
+    yield app  # Provide the app instance for tests
 
-    # Nettoyez après les tests (fermez la session, etc.)
+    # Cleanup after tests (remove session, drop database, etc.)
     with app.app_context():
         db.session.remove()
-        db.drop_all()  # Optionnel, si vous voulez effacer la base de données après chaque test
+        db.drop_all()
 
 
-# Fixture pour le client de test (utilisé pour faire des requêtes HTTP)
 @pytest.fixture
 def test_client(test_app):
+    """
+    Fixture to provide a test client for making HTTP requests.
+
+    This allows tests to simulate HTTP requests to the application.
+    """
     return test_app.test_client()
 
 
 @pytest.fixture
 def user(test_app):
-    """Fixture pour créer un utilisateur dans la base de données et le connecter."""
+    """
+    Fixture to create a user in the database and return it.
+
+    This ensures that a test user exists before running tests that require authentication.
+    """
     with test_app.app_context():
-        # Créer l'utilisateur
+        # Create a test user
         user = User(email="test@example.com", password="password")
         db.session.add(user)
-        db.session.commit()  # Sauvegarde dans la base de données
-        db.session.refresh(user)  # Assure que l'utilisateur est bien lié à la session
+        db.session.commit()  # Save the user to the database
+        db.session.refresh(
+            user
+        )  # Ensure the user is properly associated with the session
     return user

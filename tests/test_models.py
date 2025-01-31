@@ -102,11 +102,6 @@ def test_rating_model(test_client, user):
         db.session.add(recipe)
         db.session.commit()
 
-        # Crée une note associée à la recette et l'utilisateur
-        rating = Rating(stars=5, recipe_id=recipe.id, user_id=user.id)
-        db.session.add(rating)
-        db.session.commit()
-
         # Create a rating associated with the recipe and user
         rating = Rating(stars=5, recipe_id=recipe.id, user_id=user.id)
         db.session.add(rating)
